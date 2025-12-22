@@ -1,0 +1,47 @@
+---
+import Base from '../../../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+import { assertLocale, pickByLocale } from '../_util';
+
+export async function getStaticPaths() {
+  return ['en','es','fr','de','it'].map((lang) => ({ params: { lang } }));
+}
+const { lang } = Astro.params;
+if (!lang || !assertLocale(lang)) throw new Error('Invalid lang');
+
+const settings = (await getCollection('settings'))[0]?.data;
+const pages = await getCollection('pages');
+const about = pages.find(p => p.slug === 'about')?.data as any;
+const catsAll = await getCollection('categories');
+const nav = catsAll
+  .filter(c => c.data.enabled)
+  .sort((a,b)=> (a.data.order ?? 999) - (b.data.order ?? 999))
+  .map(c => ({
+    slug: c.data.slug,
+    label: (c.data as any)[`name_${lang}`] ?? c.data.name_en,
+    href: `/${lang}/${c.data.slug}/`
+  }));
+const ui = {
+  blog: pickByLocale(settings ?? {}, lang, 'nav_blog') ?? 'Blog',
+  about: pickByLocale(settings ?? {}, lang, 'nav_about') ?? 'About',
+  contact: pickByLocale(settings ?? {}, lang, 'nav_contact') ?? 'Contact',
+  langLabel: pickByLocale(settings ?? {}, lang, 'lang_label') ?? 'Language'
+};
+
+const title = about ? pickByLocale(about, lang, 'title') : 'About';
+const subtitle = about ? pickByLocale(about, lang, 'subtitle') : '';
+const body = about ? pickByLocale(about, lang, 'body') : '';
+---
+<Base title={title} lang={lang} nav={nav} settings={settings} ui={ui}>
+  <section class="hero">
+    <div class="grid">
+      <div class="card">
+        <h1>{title}</h1>
+        {subtitle ? <p>{subtitle}</p> : null}
+        {body ? <div>
+          {body.split('\n').map((line) => line.trim() ? <p>{line}</p> : <div class="hr"></div>)}
+        </div> : <p class="note">Edit this page in /admin → Pages → About.</p>}
+      </div>
+    </div>
+  </section>
+</Base>

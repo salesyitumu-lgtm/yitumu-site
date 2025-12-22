@@ -1,0 +1,54 @@
+---
+// NOTE: This project is built as a static site (output: 'static').
+// So we can't do server-side Accept-Language redirects.
+// Instead, we do a lightweight client-side language detection on the root path.
+import { getCollection } from 'astro:content';
+
+const s = (await getCollection('settings'))[0];
+const defaultLocale = s?.data?.default_locale ?? 'en';
+const supported = ['en','es','fr','de','it'];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="refresh" content={`0;url=/${defaultLocale}/`} />
+    <title>Redirecting…</title>
+  </head>
+  <body>
+    <script is:inline>
+      (function () {
+        const supported = new Set({JSON.stringify(supported)});
+        const fallback = {JSON.stringify(defaultLocale)};
+
+        function norm(lang) {
+          if (!lang) return '';
+          // e.g. 'en-US' -> 'en'
+          return String(lang).toLowerCase().split('-')[0];
+        }
+
+        const navLangs = (navigator.languages && navigator.languages.length)
+          ? navigator.languages
+          : [navigator.language];
+
+        let picked = '';
+        for (const l of navLangs) {
+          const k = norm(l);
+          if (supported.has(k)) { picked = k; break; }
+        }
+        if (!picked) picked = fallback;
+
+        // Preserve query/hash if any
+        const target = `/${picked}/` + window.location.search + window.location.hash;
+        if (window.location.pathname === '/' || window.location.pathname === '') {
+          window.location.replace(target);
+        } else {
+          // If somehow executed elsewhere, don't force redirect.
+        }
+      })();
+    </script>
+    <p>Redirecting… If nothing happens, <a href={`/${defaultLocale}/`}>click here</a>.</p>
+  </body>
+</html>

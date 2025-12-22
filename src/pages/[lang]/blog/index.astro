@@ -1,0 +1,58 @@
+---
+import Base from '../../../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+import { assertLocale, pickByLocale } from '../_util';
+
+export async function getStaticPaths() {
+  return ['en','es','fr','de','it'].map((lang) => ({ params: { lang } }));
+}
+
+const { lang } = Astro.params;
+if (!lang || !assertLocale(lang)) throw new Error('Invalid lang');
+
+const settings = (await getCollection('settings'))[0]?.data;
+const ui = {
+  blog: pickByLocale(settings ?? {}, lang, 'nav_blog') ?? 'Blog',
+  about: pickByLocale(settings ?? {}, lang, 'nav_about') ?? 'About',
+  contact: pickByLocale(settings ?? {}, lang, 'nav_contact') ?? 'Contact',
+  langLabel: pickByLocale(settings ?? {}, lang, 'lang_label') ?? 'Language'
+};
+const catsAll = await getCollection('categories');
+const nav = catsAll
+  .filter(c => c.data.enabled)
+  .sort((a,b)=> (a.data.order ?? 999) - (b.data.order ?? 999))
+  .map(c => ({
+    slug: c.data.slug,
+    label: (c.data as any)[`name_${lang}`] ?? c.data.name_en,
+    href: `/${lang}/${c.data.slug}/`
+  }));
+
+const posts = (await getCollection('blog'))
+  .sort((a,b)=> b.data.date.getTime() - a.data.date.getTime())
+  .map(p => ({
+    slug: p.slug,
+    date: p.data.date.toISOString().slice(0,10),
+    title: (p.data as any)[`title_${lang}`] ?? p.data.title_en,
+    href: `/${lang}/blog/${p.slug}/`
+  }));
+---
+<Base title={ui.blog} lang={lang} nav={nav} settings={settings} ui={ui}>
+  <section class="hero">
+    <div class="grid">
+      <div class="card">
+        <h1>Blog</h1>
+        <p>Buying guides, product tips, and updates. Maintain posts in /admin → Blog.</p>
+      </div>
+      <div class="card">
+        <div class="list">
+          {posts.map(p => (
+            <a class="btn" href={p.href}>
+              <span>{p.title}</span>
+              <span class="badge">{p.date}</span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>

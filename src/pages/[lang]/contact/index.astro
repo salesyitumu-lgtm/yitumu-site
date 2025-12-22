@@ -1,0 +1,132 @@
+---
+import Base from '../../../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+import { assertLocale, pickByLocale } from '../_util';
+
+export async function getStaticPaths() {
+  return ['en','es','fr','de','it'].map((lang) => ({ params: { lang } }));
+}
+
+const { lang } = Astro.params;
+if (!lang || !assertLocale(lang)) throw new Error('Invalid lang');
+
+const settings = (await getCollection('settings'))[0]?.data;
+const pages = await getCollection('pages');
+const contactPage = pages.find(p => p.slug === 'contact')?.data as any;
+const catsAll = await getCollection('categories');
+const nav = catsAll
+  .filter(c => c.data.enabled)
+  .sort((a,b)=> (a.data.order ?? 999) - (b.data.order ?? 999))
+  .map(c => ({
+    slug: c.data.slug,
+    label: (c.data as any)[`name_${lang}`] ?? c.data.name_en,
+    href: `/${lang}/${c.data.slug}/`
+  }));
+
+const product = Astro.url.searchParams.get('product') ?? '';
+const whatsappDigits = settings?.whatsapp_number ? String(settings.whatsapp_number).replace(/[^0-9]/g,'') : '';
+
+const ui = {
+  blog: pickByLocale(settings ?? {}, lang, 'nav_blog') ?? 'Blog',
+  about: pickByLocale(settings ?? {}, lang, 'nav_about') ?? 'About',
+  contact: pickByLocale(settings ?? {}, lang, 'nav_contact') ?? 'Contact',
+  langLabel: pickByLocale(settings ?? {}, lang, 'lang_label') ?? 'Language'
+};
+
+const title = contactPage ? pickByLocale(contactPage, lang, 'title') : 'Contact';
+const subtitle = contactPage ? pickByLocale(contactPage, lang, 'subtitle') : '';
+const intro = contactPage ? pickByLocale(contactPage, lang, 'body') : '';
+---
+
+<Base title={title} lang={lang} nav={nav} settings={settings} ui={ui}>
+  <section class="hero">
+    <div class="grid">
+      <div class="card">
+        <h1>{title}</h1>
+        {subtitle ? <p>{subtitle}</p> : null}
+        {intro ? <p class="note">{intro}</p> : null}
+
+        <div class="cols">
+          <div class="col">
+            <h3>Direct</h3>
+            <p>
+              Email:
+              <a href={`mailto:${settings?.sales_email ?? 'sales@yitumuglobal.com'}`}>
+                {settings?.sales_email ?? 'sales@yitumuglobal.com'}
+              </a>
+            </p>
+
+            {whatsappDigits ? (
+              <p>
+                WhatsApp:
+                <a href={`https://wa.me/${whatsappDigits}`} target="_blank">
+                  {settings?.whatsapp_number}
+                </a>
+              </p>
+            ) : (
+              <p class="note">Add WhatsApp in /admin → Site Settings.</p>
+            )}
+
+            <p class="note">Note: your email forwarder is already working (sales@yitumuglobal.com → Gmail).</p>
+          </div>
+
+          <div class="col">
+            <h3>Inquiry Form</h3>
+
+            <!-- ✅ B方案：固定提交到 Cloudflare Pages Functions -->
+            <form method="POST" action="/api/contact">
+              <!-- Honeypot: bots will fill it, humans won't -->
+              <div style="position:absolute;left:-9999px;top:-9999px;height:0;overflow:hidden;">
+                <label>Website</label>
+                <input name="website" tabindex="-1" autocomplete="off" />
+              </div>
+
+              <div class="formrow">
+                <div class="span6">
+                  <label>Name</label>
+                  <input name="name" required />
+                </div>
+
+                <div class="span6">
+                  <label>Email</label>
+                  <input name="email" type="email" required />
+                </div>
+
+                <div class="span6">
+                  <label>WhatsApp</label>
+                  <input name="whatsapp" />
+                </div>
+
+                <div class="span6">
+                  <label>Country</label>
+                  <input name="country" />
+                </div>
+
+                <div class="span6">
+                  <label>Quantity</label>
+                  <input name="quantity" />
+                </div>
+
+                <div class="span6">
+                  <label>Product</label>
+                  <input name="product" value={product} />
+                </div>
+              </div>
+
+              <div style="margin-top:12px">
+                <label>Message</label>
+                <textarea name="message" required></textarea>
+              </div>
+
+              <div style="margin-top:12px" class="row">
+                <button class="btn" type="submit">Send Inquiry</button>
+                <span class="note">B: Secure serverless submit (KV rate-limit + webhook)</span>
+              </div>
+            </form>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>

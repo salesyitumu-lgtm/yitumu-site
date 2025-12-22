@@ -1,0 +1,183 @@
+backend:
+  name: github
+  repo: salesyitumu-lgtm/yitumu-site
+  branch: main
+  base_url: https://www.yitumuglobal.com
+  auth_endpoint: /api/auth
+
+media_folder: "src/uploads"
+public_folder: "/uploads"
+
+locale: zh_Hans
+
+collections:
+  # 1) 全站设置（中文后台）
+  - name: "settings"
+    label: "站点设置"
+    files:
+      - name: "global"
+        label: "全局设置"
+        file: "src/content/settings/global.md"
+        fields:
+          - { label: "网站名称", name: "site_name", widget: "string", required: false }
+          - { label: "默认语言", name: "default_locale", widget: "select", options: ["en","es","fr","de","it"], default: "en" }
+          - { label: "销售邮箱", name: "sales_email", widget: "string", required: true }
+          - { label: "WhatsApp号码", name: "whatsapp_number", widget: "string", required: false }
+          - { label: "WhatsApp按钮文案", name: "whatsapp_label", widget: "string", required: false }
+          - { label: "表单外部提交地址(可选)", name: "form_action", widget: "string", required: false }
+
+          - label: "导航文案（可选，不填则用默认英文）"
+            name: "nav_labels"
+            widget: "object"
+            fields:
+              - { label: "Blog (EN)", name: "nav_blog_en", widget: "string", required: false }
+              - { label: "Blog (ES)", name: "nav_blog_es", widget: "string", required: false }
+              - { label: "Blog (FR)", name: "nav_blog_fr", widget: "string", required: false }
+              - { label: "Blog (DE)", name: "nav_blog_de", widget: "string", required: false }
+              - { label: "Blog (IT)", name: "nav_blog_it", widget: "string", required: false }
+
+              - { label: "About (EN)", name: "nav_about_en", widget: "string", required: false }
+              - { label: "About (ES)", name: "nav_about_es", widget: "string", required: false }
+              - { label: "About (FR)", name: "nav_about_fr", widget: "string", required: false }
+              - { label: "About (DE)", name: "nav_about_de", widget: "string", required: false }
+              - { label: "About (IT)", name: "nav_about_it", widget: "string", required: false }
+
+              - { label: "Contact (EN)", name: "nav_contact_en", widget: "string", required: false }
+              - { label: "Contact (ES)", name: "nav_contact_es", widget: "string", required: false }
+              - { label: "Contact (FR)", name: "nav_contact_fr", widget: "string", required: false }
+              - { label: "Contact (DE)", name: "nav_contact_de", widget: "string", required: false }
+              - { label: "Contact (IT)", name: "nav_contact_it", widget: "string", required: false }
+
+              - { label: "Language 标签(EN)", name: "lang_label_en", widget: "string", required: false }
+              - { label: "Language 标签(ES)", name: "lang_label_es", widget: "string", required: false }
+              - { label: "Language 标签(FR)", name: "lang_label_fr", widget: "string", required: false }
+              - { label: "Language 标签(DE)", name: "lang_label_de", widget: "string", required: false }
+              - { label: "Language 标签(IT)", name: "lang_label_it", widget: "string", required: false }
+
+  # 2) 类目（4个类目：名称多语言 + 开关 + 排序）
+  - name: "categories"
+    label: "类目管理"
+    folder: "src/content/categories"
+    create: true
+    slug: "{{slug}}"
+    summary: "{{filename}}"
+    fields:
+      - { label: "排序(越小越靠前)", name: "order", widget: "number", value_type: "int", default: 1 }
+      - { label: "是否展示", name: "enabled", widget: "boolean", default: true }
+      - { label: "英文类目名", name: "name_en", widget: "string" }
+      - { label: "西班牙语类目名", name: "name_es", widget: "string", required: false }
+      - { label: "法语类目名", name: "name_fr", widget: "string", required: false }
+      - { label: "德语类目名", name: "name_de", widget: "string", required: false }
+      - { label: "意大利语类目名", name: "name_it", widget: "string", required: false }
+
+  # 3) 产品
+  - name: "products"
+    label: "产品管理"
+    folder: "src/content/products"
+    create: true
+    slug: "{{slug}}"
+    summary: "{{title_en}} ({{category}})"
+    fields:
+      - { label: "状态", name: "status", widget: "select", options: ["active","draft"], default: "active" }
+      - label: "所属类目"
+        name: "category"
+        widget: "relation"
+        collection: "categories"
+        search_fields: ["name_en","name_es","name_fr","name_de","name_it"]
+        value_field: "{{slug}}"
+        display_fields: ["name_en"]
+      - { label: "型号(可选)", name: "model", widget: "string", required: false }
+      - { label: "MOQ(可选)", name: "moq", widget: "string", required: false }
+      - { label: "排序(可选)", name: "order", widget: "number", value_type: "int", required: false }
+
+      - label: "产品图"
+        name: "images"
+        widget: "list"
+        required: false
+        field: { label: "图片", name: "image", widget: "image" }
+
+      - label: "标题（5国语言，不填则自动回落英文）"
+        name: "titles"
+        widget: "object"
+        fields:
+          - { label: "标题-英文", name: "title_en", widget: "string" }
+          - { label: "标题-西班牙语", name: "title_es", widget: "string", required: false }
+          - { label: "标题-法语", name: "title_fr", widget: "string", required: false }
+          - { label: "标题-德语", name: "title_de", widget: "string", required: false }
+          - { label: "标题-意大利语", name: "title_it", widget: "string", required: false }
+
+      - label: "卖点（每条一行）"
+        name: "features"
+        widget: "object"
+        fields:
+          - { label: "卖点-英文", name: "features_en", widget: "list", required: false }
+          - { label: "卖点-西班牙语", name: "features_es", widget: "list", required: false }
+          - { label: "卖点-法语", name: "features_fr", widget: "list", required: false }
+          - { label: "卖点-德语", name: "features_de", widget: "list", required: false }
+          - { label: "卖点-意大利语", name: "features_it", widget: "list", required: false }
+
+      - label: "详情正文(可选)"
+        name: "bodies"
+        widget: "object"
+        required: false
+        fields:
+          - { label: "详情-英文", name: "body_en", widget: "markdown", required: false }
+          - { label: "详情-西班牙语", name: "body_es", widget: "markdown", required: false }
+          - { label: "详情-法语", name: "body_fr", widget: "markdown", required: false }
+          - { label: "详情-德语", name: "body_de", widget: "markdown", required: false }
+          - { label: "详情-意大利语", name: "body_it", widget: "markdown", required: false }
+
+      - { label: "视频类型", name: "video_provider", widget: "select", options: ["none","cloudflare_stream","youtube"], default: "none" }
+      - { label: "视频值(可选：YouTube链接/ID 或 Cloudflare Stream ID)", name: "video_value", widget: "string", required: false }
+
+  # 4) 博客
+  - name: "blog"
+    label: "博客"
+    folder: "src/content/blog"
+    create: true
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    summary: "{{title_en}}"
+    fields:
+      - { label: "日期", name: "date", widget: "datetime" }
+      - { label: "封面图(可选)", name: "cover", widget: "image", required: false }
+
+      - { label: "标题-英文", name: "title_en", widget: "string" }
+      - { label: "标题-西班牙语", name: "title_es", widget: "string", required: false }
+      - { label: "标题-法语", name: "title_fr", widget: "string", required: false }
+      - { label: "标题-德语", name: "title_de", widget: "string", required: false }
+      - { label: "标题-意大利语", name: "title_it", widget: "string", required: false }
+
+      - { label: "正文-英文", name: "body_en", widget: "markdown" }
+      - { label: "正文-西班牙语", name: "body_es", widget: "markdown", required: false }
+      - { label: "正文-法语", name: "body_fr", widget: "markdown", required: false }
+      - { label: "正文-德语", name: "body_de", widget: "markdown", required: false }
+      - { label: "正文-意大利语", name: "body_it", widget: "markdown", required: false }
+
+      - { label: "视频类型", name: "video_provider", widget: "select", options: ["none","cloudflare_stream","youtube"], default: "none" }
+      - { label: "视频值(可选)", name: "video_value", widget: "string", required: false }
+
+  # 5) 页面内容（让后台控制前端页面）
+  - name: "pages"
+    label: "页面内容"
+    folder: "src/content/pages"
+    create: false
+    slug: "{{slug}}"
+    summary: "{{filename}}"
+    fields:
+      - { label: "标题-英文", name: "title_en", widget: "string" }
+      - { label: "标题-西班牙语", name: "title_es", widget: "string", required: false }
+      - { label: "标题-法语", name: "title_fr", widget: "string", required: false }
+      - { label: "标题-德语", name: "title_de", widget: "string", required: false }
+      - { label: "标题-意大利语", name: "title_it", widget: "string", required: false }
+
+      - { label: "副标题-英文", name: "subtitle_en", widget: "string", required: false }
+      - { label: "副标题-西班牙语", name: "subtitle_es", widget: "string", required: false }
+      - { label: "副标题-法语", name: "subtitle_fr", widget: "string", required: false }
+      - { label: "副标题-德语", name: "subtitle_de", widget: "string", required: false }
+      - { label: "副标题-意大利语", name: "subtitle_it", widget: "string", required: false }
+
+      - { label: "正文-英文", name: "body_en", widget: "markdown", required: false }
+      - { label: "正文-西班牙语", name: "body_es", widget: "markdown", required: false }
+      - { label: "正文-法语", name: "body_fr", widget: "markdown", required: false }
+      - { label: "正文-德语", name: "body_de", widget: "markdown", required: false }
+      - { label: "正文-意大利语", name: "body_it", widget: "markdown", required: false }

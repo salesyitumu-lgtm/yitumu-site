@@ -1,0 +1,116 @@
+---
+import Base from '../../../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+import { assertLocale, pickByLocale, pickListByLocale, youtubeEmbed } from '../_util';
+
+export async function getStaticPaths() {
+  const langs = ['en','es','fr','de','it'];
+  const productsAll = await getCollection('products');
+  const active = productsAll.filter(p => p.data.status === 'active');
+  const catsAll = await getCollection('categories');
+  const enabledSlugs = new Set(catsAll.filter(c=>c.data.enabled).map(c=>c.data.slug));
+
+  const paths = [];
+  for (const lang of langs) {
+    for (const p of active) {
+      // 1A: if its category disabled => do not build route (becomes 404)
+      if (!enabledSlugs.has(p.data.category)) continue;
+      paths.push({ params: { lang, slug: p.slug } });
+    }
+  }
+  return paths;
+}
+
+const { lang, slug } = Astro.params;
+if (!lang || !assertLocale(lang)) throw new Error('Invalid lang');
+
+const settings = (await getCollection('settings'))[0]?.data;
+const ui = {
+  blog: pickByLocale(settings ?? {}, lang, 'nav_blog') ?? 'Blog',
+  about: pickByLocale(settings ?? {}, lang, 'nav_about') ?? 'About',
+  contact: pickByLocale(settings ?? {}, lang, 'nav_contact') ?? 'Contact',
+  langLabel: pickByLocale(settings ?? {}, lang, 'lang_label') ?? 'Language'
+};
+const catsAll = await getCollection('categories');
+const nav = catsAll
+  .filter(c => c.data.enabled)
+  .sort((a,b)=> (a.data.order ?? 999) - (b.data.order ?? 999))
+  .map(c => ({
+    slug: c.data.slug,
+    label: (c.data as any)[`name_${lang}`] ?? c.data.name_en,
+    href: `/${lang}/${c.data.slug}/`
+  }));
+
+const productsAll = await getCollection('products');
+const p = productsAll.find(x => x.slug === slug);
+if (!p) return new Response('Not Found', { status: 404 });
+
+const cat = catsAll.find(c => c.data.slug === p.data.category);
+if (!cat || !cat.data.enabled) return new Response('Not Found', { status: 404 }); // 1A strict
+
+const title = (p.data as any)[`title_${lang}`] ?? p.data.title_en;
+const features = ((p.data as any)[`features_${lang}`] ?? p.data.features_en ?? []) as string[];
+const body = ((p.data as any)[`body_${lang}`] ?? p.data.body_en ?? '') as string;
+
+let embedUrl: string | null = null;
+if (p.data.video_provider === 'youtube') {
+  embedUrl = youtubeEmbed(p.data.video_value);
+} else if (p.data.video_provider === 'cloudflare_stream') {
+  // Expect an iframe/embed URL provided in CMS
+  embedUrl = p.data.video_value ?? null;
+}
+const whatsappDigits = settings?.whatsapp_number ? String(settings.whatsapp_number).replace(/[^0-9]/g,'') : '';
+---
+<Base title={title} lang={lang} nav={nav} settings={settings} ui={ui}>
+  <section class="hero">
+    <div class="grid">
+      <div class="card">
+        <h1>{title}</h1>
+        <p class="muted">
+          Category: <a href={`/${lang}/${p.data.category}/`}>{(cat.data as any)[`name_${lang}`] ?? cat.data.name_en}</a>
+          {p.data.model ? <span> · Model: {p.data.model}</span> : null}
+          {p.data.moq ? <span> · MOQ: {p.data.moq}</span> : null}
+        </p>
+
+        {p.data.images?.length ? (
+          <div class="list">
+            {p.data.images.map((img) => <img src={img} alt={title} style="max-width:100%;border-radius:14px;border:1px solid var(--border)"/>)}
+          </div>
+        ) : (
+          <p>No images yet. Add in /admin → Products → Images.</p>
+        )}
+
+        {embedUrl ? (
+          <>
+            <div class="hr"></div>
+            <h2>Product Video</h2>
+            <div class="embed">
+              <iframe src={embedUrl} allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+            </div>
+            <p class="note">Video Provider: {p.data.video_provider}</p>
+          </>
+        ) : null}
+
+        <div class="hr"></div>
+        <div class="row">
+          <a class="btn" href={`/${lang}/contact/?product=${encodeURIComponent(title)}`}>Request a Quote</a>
+          {whatsappDigits ? <a class="btn" href={`https://wa.me/${whatsappDigits}`} target="_blank">{settings?.whatsapp_label ?? 'WhatsApp'}</a> : null}
+          <a class="btn" href={`mailto:${settings?.sales_email ?? 'sales@yitumuglobal.com'}?subject=${encodeURIComponent('Inquiry: '+title)}`}>Email</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Key Features</h2>
+        {features.length ? (
+          <ul class="muted">
+            {features.map(f => <li>{f}</li>)}
+          </ul>
+        ) : <p>Add features in CMS for this language.</p>}
+
+        <div class="hr"></div>
+        <h2>Description</h2>
+        {body ? <div class="muted" set:html={body}></div> : <p>Add body_{lang} in CMS.</p>}
+      </div>
+    </div>
+  </section>
+</Base>

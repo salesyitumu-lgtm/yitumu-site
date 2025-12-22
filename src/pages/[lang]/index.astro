@@ -1,0 +1,70 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+import { assertLocale, pickByLocale } from './_util';
+
+export async function getStaticPaths() {
+  return ['en','es','fr','de','it'].map((lang) => ({ params: { lang } }));
+}
+
+const { lang } = Astro.params;
+if (!lang || !assertLocale(lang)) throw new Error('Invalid lang');
+
+const settings = (await getCollection('settings'))[0]?.data;
+const catsAll = await getCollection('categories');
+const categories = catsAll
+  .filter(c => c.data.enabled)
+  .sort((a,b)=> (a.data.order ?? 999) - (b.data.order ?? 999))
+  .map(c => ({
+    slug: c.data.slug,
+    label: (c.data as any)[`name_${lang}`] ?? c.data.name_en,
+    href: `/${lang}/${c.data.slug}/`
+  }));
+
+const pages = await getCollection('pages');
+const home = pages.find(p => p.slug === 'home')?.data as any;
+
+const h1 = home ? pickByLocale(home, lang, 'title') : 'Wholesale Products & OEM/ODM Support';
+const p = home ? pickByLocale(home, lang, 'subtitle') : '';
+
+const ui = {
+  blog: pickByLocale(settings ?? {}, lang, 'nav_blog') ?? 'Blog',
+  about: pickByLocale(settings ?? {}, lang, 'nav_about') ?? 'About',
+  contact: pickByLocale(settings ?? {}, lang, 'nav_contact') ?? 'Contact',
+  langLabel: pickByLocale(settings ?? {}, lang, 'lang_label') ?? 'Language'
+};
+
+---
+<Base title="YITUMU GLOBAL" lang={lang} nav={categories} settings={settings} ui={ui}>
+  <section class="hero">
+    <div class="grid">
+      <div class="card half">
+        <h1>{h1}</h1>
+        {p ? <p>{p}</p> : null}
+        <div class="hr"></div>
+        <div class="row">
+          <a class="btn" href={`/${lang}/contact/`}>Request a Quote</a>
+          {settings?.whatsapp_number ? <a class="btn" href={`https://wa.me/${String(settings.whatsapp_number).replace(/[^0-9]/g,'')}`} target="_blank">{settings?.whatsapp_label ?? 'WhatsApp'}</a> : null}
+        </div>
+        <p class="note">Default locale: {settings?.default_locale ?? 'en'} · URL format: /{lang}/…</p>
+      </div>
+
+      <div class="card half">
+        <h2>Categories</h2>
+        <div class="list">
+          {categories.map(c => (
+            <a class="btn" href={c.href}>
+              <span>{c.label}</span>
+              <span class="badge">{c.slug}</span>
+            </a>
+          ))}
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>How to update products & blog</h2>
+        <p>Go to <a href="/admin/" target="_blank">/admin</a> → login → edit Categories / Products / Blog / Site Settings.</p>
+      </div>
+    </div>
+  </section>
+</Base>

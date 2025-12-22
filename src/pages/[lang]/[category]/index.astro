@@ -1,0 +1,84 @@
+---
+import Base from '../../../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+import { assertLocale, pickByLocale } from '../_util';
+
+export async function getStaticPaths() {
+  const langs = ['en','es','fr','de','it'];
+  const catsAll = await getCollection('categories');
+  const enabled = catsAll.filter(c => c.data.enabled);
+  const paths = [] as any[];
+  for (const lang of langs) {
+    for (const c of enabled) {
+      paths.push({ params: { lang, category: c.slug } });
+    }
+  }
+  return paths;
+}
+
+const { lang, category } = Astro.params;
+if (!lang || !assertLocale(lang)) throw new Error('Invalid lang');
+
+const settings = (await getCollection('settings'))[0]?.data;
+const ui = {
+  blog: pickByLocale(settings ?? {}, lang, 'nav_blog') ?? 'Blog',
+  about: pickByLocale(settings ?? {}, lang, 'nav_about') ?? 'About',
+  contact: pickByLocale(settings ?? {}, lang, 'nav_contact') ?? 'Contact',
+  langLabel: pickByLocale(settings ?? {}, lang, 'lang_label') ?? 'Language'
+};
+
+const catsAll = await getCollection('categories');
+const cat = catsAll.find(c => c.slug === category);
+if (!cat || !cat.data.enabled) return new Response('Not Found', { status: 404 });
+
+const nav = catsAll
+  .filter(c => c.data.enabled)
+  .sort((a,b)=> (a.data.order ?? 999) - (b.data.order ?? 999))
+  .map(c => ({
+    slug: c.slug,
+    label: (c.data as any)[`name_${lang}`] ?? c.data.name_en,
+    href: `/${lang}/${c.slug}/`
+  }));
+
+const productsAll = await getCollection('products');
+const products = productsAll
+  .filter(p => p.data.status === 'active' && p.data.category === category)
+  .sort((a,b)=> (a.data.order ?? 999) - (b.data.order ?? 999))
+  .map(p => ({
+    slug: p.slug,
+    title: (p.data as any)[`title_${lang}`] ?? p.data.title_en,
+    cover: (p.data.images && p.data.images.length) ? p.data.images[0] : null,
+    href: `/${lang}/p/${p.slug}/`
+  }));
+
+const catName = (cat.data as any)[`name_${lang}`] ?? cat.data.name_en;
+---
+
+<Base title={catName} lang={lang} nav={nav} settings={settings} ui={ui}>
+  <section class="hero">
+    <div class="grid">
+      <div class="card">
+        <h1>{catName}</h1>
+        <p class="note">Products: {products.length}</p>
+      </div>
+
+      <div class="card">
+        {products.length ? (
+          <div class="cols">
+            {products.map(p => (
+              <a class="btn col" href={p.href} style="flex-direction:column;align-items:stretch;">
+                {p.cover ? <img src={p.cover} alt={p.title} style="width:100%;border-radius:14px;border:1px solid var(--border);margin-bottom:10px" /> : null}
+                <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;">
+                  <span>{p.title}</span>
+                  <span class="badge">View</span>
+                </div>
+              </a>
+            ))}
+          </div>
+        ) : (
+          <p>No active products in this category yet. Add products in /admin → 产品.</p>
+        )}
+      </div>
+    </div>
+  </section>
+</Base>
