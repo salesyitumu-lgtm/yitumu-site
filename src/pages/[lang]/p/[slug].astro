@@ -2,7 +2,83 @@
 import Base from '../../../layouts/Base.astro';
 import { getCollection } from 'astro:content';
 import { assertLocale, pickByLocale, youtubeEmbed } from '../_util';
-import { Markdown } from 'astro/components';
+
+function escapeHtml(s: string) {
+  return s
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+/**
+ * ✅ 轻量 Markdown 渲染（零依赖）
+ * 支持：# ## ###、**bold**、[text](url)、- 列表、段落/换行
+ * 不追求100% Markdown 规范，但足够用于产品详情页。
+ */
+function mdToHtmlLite(md: string) {
+  if (!md) return '';
+
+  // 先做基础转义，避免注入
+  let s = escapeHtml(md);
+
+  // 标题
+  s = s.replace(/^###\s+(.+)$/gm, '<h3>$1</h3>');
+  s = s.replace(/^##\s+(.+)$/gm, '<h2>$1</h2>');
+  s = s.replace(/^#\s+(.+)$/gm, '<h1>$1</h1>');
+
+  // 加粗 **text**
+  s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+  // 链接 [text](url)
+  s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+
+  // 列表：把连续的 - item 变成 <ul><li>...</li></ul>
+  const lines = s.split('\n');
+  let out: string[] = [];
+  let inUl = false;
+
+  const flushUl = () => {
+    if (inUl) {
+      out.push('</ul>');
+      inUl = false;
+    }
+  };
+
+  for (const raw of lines) {
+    const line = raw.trimEnd();
+
+    const m = line.match(/^\s*-\s+(.+)$/);
+    if (m) {
+      if (!inUl) {
+        out.push('<ul>');
+        inUl = true;
+      }
+      out.push(`<li>${m[1]}</li>`);
+      continue;
+    }
+
+    // 非列表行
+    flushUl();
+    out.push(raw);
+  }
+  flushUl();
+
+  s = out.join('\n');
+
+  // 段落：按空行分段
+  const blocks = s.split(/\n\s*\n/g).map(b => b.trim()).filter(Boolean);
+  const htmlBlocks = blocks.map(b => {
+    // 如果是 ul 或 h* 开头，直接返回
+    if (/^<ul>/.test(b) || /^<h[1-3]>/.test(b)) return b;
+    // 普通文本块：单行换行转 <br>
+    const withBr = b.replace(/\n/g, '<br/>');
+    return `<p>${withBr}</p>`;
+  });
+
+  return htmlBlocks.join('\n');
+}
 
 export async function getStaticPaths() {
   const langs = ['en','es','fr','de','it'];
@@ -11,13 +87,11 @@ export async function getStaticPaths() {
   const active = productsAll.filter(p => p.data.status === 'active');
 
   const catsAll = await getCollection('categories');
-  // ✅ categories 的 slug 在 c.slug
   const enabledSlugs = new Set(catsAll.filter(c => c.data.enabled).map(c => c.slug));
 
   const paths = [];
   for (const lang of langs) {
     for (const p of active) {
-      // 分类被禁用 => 不生成该详情页（访问会 404）
       if (!enabledSlugs.has(p.data.category)) continue;
       paths.push({ params: { lang, slug: p.slug } });
     }
@@ -38,8 +112,6 @@ const ui = {
 };
 
 const catsAll = await getCollection('categories');
-
-// ✅ 导航：用 c.slug
 const nav = catsAll
   .filter(c => c.data.enabled)
   .sort((a,b)=> (a.data.order ?? 999) - (b.data.order ?? 999))
@@ -53,13 +125,14 @@ const productsAll = await getCollection('products');
 const p = productsAll.find(x => x.slug === slug);
 if (!p) return new Response('Not Found', { status: 404 });
 
-// ✅ 分类匹配：用 c.slug
 const cat = catsAll.find(c => c.slug === p.data.category);
 if (!cat || !cat.data.enabled) return new Response('Not Found', { status: 404 });
 
 const title = (p.data as any)[`title_${lang}`] ?? p.data.title_en ?? p.slug;
 const features = ((p.data as any)[`features_${lang}`] ?? p.data.features_en ?? []) as string[];
+
 const bodyMd = ((p.data as any)[`body_${lang}`] ?? p.data.body_en ?? '') as string;
+const bodyHtml = mdToHtmlLite(bodyMd);
 
 let embedUrl: string | null = null;
 if (p.data.video_provider === 'youtube') {
@@ -78,7 +151,6 @@ const categoryLabel = (cat.data as any)[`name_${lang}`] ?? cat.data.name_en;
 <Base title={title} lang={lang} nav={nav} settings={settings} ui={ui}>
   <section class="hero">
     <div class="grid">
-      <!-- 左侧：标题 + 图片 + 视频 + CTA -->
       <div class="card">
         <h1>{title}</h1>
 
@@ -92,11 +164,7 @@ const categoryLabel = (cat.data as any)[`name_${lang}`] ?? cat.data.name_en;
         {p.data.images?.length ? (
           <div class="imggrid">
             {p.data.images.map((img) => (
-              <img
-                src={img}
-                alt={title}
-                loading="lazy"
-              />
+              <img src={img} alt={title} loading="lazy" />
             ))}
           </div>
         ) : (
@@ -137,7 +205,6 @@ const categoryLabel = (cat.data as any)[`name_${lang}`] ?? cat.data.name_en;
         </div>
       </div>
 
-      <!-- 右侧：卖点 + 描述 -->
       <div class="card">
         <h2>Key Features</h2>
         {features.length ? (
@@ -151,10 +218,8 @@ const categoryLabel = (cat.data as any)[`name_${lang}`] ?? cat.data.name_en;
         <div class="hr"></div>
         <h2>Description</h2>
 
-        {bodyMd ? (
-          <div class="prose muted">
-            <Markdown content={bodyMd} />
-          </div>
+        {bodyHtml ? (
+          <div class="prose muted" set:html={bodyHtml}></div>
         ) : (
           <p class="note">Add body_{lang} (or body_en) in CMS.</p>
         )}
@@ -179,20 +244,3 @@ const categoryLabel = (cat.data as any)[`name_${lang}`] ?? cat.data.name_en;
     }
 
     .actions{
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      margin-top: 8px;
-    }
-    .btn.ghost{
-      background: transparent;
-      border: 1px solid rgba(255,255,255,.18);
-    }
-
-    /* 让 Markdown 输出更像“产品说明” */
-    .prose :global(p){ margin: 10px 0; }
-    .prose :global(ul){ margin: 10px 0; padding-left: 18px; }
-    .prose :global(li){ margin: 4px 0; }
-    .prose :global(a){ text-decoration: underline; }
-  </style>
-</Base>
