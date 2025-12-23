@@ -5,7 +5,7 @@ backend:
   base_url: https://www.yitumuglobal.com
   auth_endpoint: /api/auth
 
-media_folder: "src/uploads"
+media_folder: "public/uploads"
 public_folder: "/uploads"
 
 locale: zh_Hans
