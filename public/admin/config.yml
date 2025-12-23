@@ -78,57 +78,72 @@ collections:
     slug: "{{slug}}"
     summary: "{{title_en}} ({{category}})"
     fields:
-      - { label: "状态", name: "status", widget: "select", options: ["active","draft"], default: "active" }
-      - label: "所属类目"
+      - { label: "文件Slug（必填，建议英文/数字/短横线，例如：hf-3600-usb-fan）", name: "slug", widget: "string" }
+
+      - { label: "状态（必填）", name: "status", widget: "select", options: ["active","draft"], default: "active" }
+
+      - label: "所属类目（必填）"
         name: "category"
         widget: "relation"
         collection: "categories"
         search_fields: ["name_en","name_es","name_fr","name_de","name_it"]
         value_field: "{{slug}}"
         display_fields: ["name_en"]
-      - { label: "型号(可选)", name: "model", widget: "string", required: false }
-      - { label: "MOQ(可选)", name: "moq", widget: "string", required: false }
-      - { label: "排序(可选)", name: "order", widget: "number", value_type: "int", required: false }
 
-      - label: "产品图"
+      - { label: "型号（选填）", name: "model", widget: "string", required: false }
+      - { label: "MOQ（选填）", name: "moq", widget: "string", required: false }
+      - { label: "排序（选填，越小越靠前）", name: "order", widget: "number", value_type: "int", required: false }
+
+      - label: "产品图（选填，可多张）"
         name: "images"
         widget: "list"
         required: false
         field: { label: "图片", name: "image", widget: "image" }
 
-      - label: "标题（5国语言，不填则自动回落英文）"
-        name: "titles"
-        widget: "object"
-        fields:
-          - { label: "标题-英文", name: "title_en", widget: "string" }
-          - { label: "标题-西班牙语", name: "title_es", widget: "string", required: false }
-          - { label: "标题-法语", name: "title_fr", widget: "string", required: false }
-          - { label: "标题-德语", name: "title_de", widget: "string", required: false }
-          - { label: "标题-意大利语", name: "title_it", widget: "string", required: false }
+      - { label: "标题-英文（必填）", name: "title_en", widget: "string" }
+      - { label: "标题-西班牙语（选填）", name: "title_es", widget: "string", required: false }
+      - { label: "标题-法语（选填）", name: "title_fr", widget: "string", required: false }
+      - { label: "标题-德语（选填）", name: "title_de", widget: "string", required: false }
+      - { label: "标题-意大利语（选填）", name: "title_it", widget: "string", required: false }
 
-      - label: "卖点（每条一行）"
-        name: "features"
-        widget: "object"
-        fields:
-          - { label: "卖点-英文", name: "features_en", widget: "list", required: false }
-          - { label: "卖点-西班牙语", name: "features_es", widget: "list", required: false }
-          - { label: "卖点-法语", name: "features_fr", widget: "list", required: false }
-          - { label: "卖点-德语", name: "features_de", widget: "list", required: false }
-          - { label: "卖点-意大利语", name: "features_it", widget: "list", required: false }
-
-      - label: "详情正文(可选)"
-        name: "bodies"
-        widget: "object"
+      - label: "卖点-英文（选填，每条一行）"
+        name: "features_en"
+        widget: "list"
         required: false
-        fields:
-          - { label: "详情-英文", name: "body_en", widget: "markdown", required: false }
-          - { label: "详情-西班牙语", name: "body_es", widget: "markdown", required: false }
-          - { label: "详情-法语", name: "body_fr", widget: "markdown", required: false }
-          - { label: "详情-德语", name: "body_de", widget: "markdown", required: false }
-          - { label: "详情-意大利语", name: "body_it", widget: "markdown", required: false }
+        field: { label: "卖点", name: "feature", widget: "string" }
 
-      - { label: "视频类型", name: "video_provider", widget: "select", options: ["none","cloudflare_stream","youtube"], default: "none" }
-      - { label: "视频值(可选：YouTube链接/ID 或 Cloudflare Stream ID)", name: "video_value", widget: "string", required: false }
+      - label: "卖点-西班牙语（选填）"
+        name: "features_es"
+        widget: "list"
+        required: false
+        field: { label: "卖点", name: "feature", widget: "string" }
+
+      - label: "卖点-法语（选填）"
+        name: "features_fr"
+        widget: "list"
+        required: false
+        field: { label: "卖点", name: "feature", widget: "string" }
+
+      - label: "卖点-德语（选填）"
+        name: "features_de"
+        widget: "list"
+        required: false
+        field: { label: "卖点", name: "feature", widget: "string" }
+
+      - label: "卖点-意大利语（选填）"
+        name: "features_it"
+        widget: "list"
+        required: false
+        field: { label: "卖点", name: "feature", widget: "string" }
+
+      - { label: "详情-英文（选填）", name: "body_en", widget: "markdown", required: false }
+      - { label: "详情-西班牙语（选填）", name: "body_es", widget: "markdown", required: false }
+      - { label: "详情-法语（选填）", name: "body_fr", widget: "markdown", required: false }
+      - { label: "详情-德语（选填）", name: "body_de", widget: "markdown", required: false }
+      - { label: "详情-意大利语（选填）", name: "body_it", widget: "markdown", required: false }
+
+      - { label: "视频类型（必填）", name: "video_provider", widget: "select", options: ["none","cloudflare_stream","youtube"], default: "none" }
+      - { label: "视频值（选填：YouTube链接/ID 或 Cloudflare Stream ID）", name: "video_value", widget: "string", required: false }
 
   # 4) 博客
   - name: "blog"
