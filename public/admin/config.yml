@@ -53,8 +53,7 @@ collections:
           - { label: "语言标签（DE）（选填）", name: "lang_label_de", widget: "string", required: false }
           - { label: "语言标签（IT）（选填）", name: "lang_label_it", widget: "string", required: false }
 
-
-  # 2) 类目（4个类目：名称多语言 + 开关 + 排序）
+  # 2) 类目（文件名即 slug；无需额外 slug 字段）
   - name: "categories"
     label: "类目管理"
     folder: "src/content/categories"
@@ -62,15 +61,15 @@ collections:
     slug: "{{slug}}"
     summary: "{{filename}}"
     fields:
-      - { label: "排序(越小越靠前)", name: "order", widget: "number", value_type: "int", default: 1 }
-      - { label: "是否展示", name: "enabled", widget: "boolean", default: true }
-      - { label: "英文类目名", name: "name_en", widget: "string" }
-      - { label: "西班牙语类目名", name: "name_es", widget: "string", required: false }
-      - { label: "法语类目名", name: "name_fr", widget: "string", required: false }
-      - { label: "德语类目名", name: "name_de", widget: "string", required: false }
-      - { label: "意大利语类目名", name: "name_it", widget: "string", required: false }
+      - { label: "排序（越小越靠前）（必填）", name: "order", widget: "number", value_type: "int", default: 1 }
+      - { label: "是否展示（必填）", name: "enabled", widget: "boolean", default: true }
+      - { label: "英文类目名（必填）", name: "name_en", widget: "string" }
+      - { label: "西班牙语类目名（选填）", name: "name_es", widget: "string", required: false }
+      - { label: "法语类目名（选填）", name: "name_fr", widget: "string", required: false }
+      - { label: "德语类目名（选填）", name: "name_de", widget: "string", required: false }
+      - { label: "意大利语类目名（选填）", name: "name_it", widget: "string", required: false }
 
-  # 3) 产品
+  # 3) 产品（扁平字段版：与 Astro schema 完全一致）
   - name: "products"
     label: "产品管理"
     folder: "src/content/products"
@@ -78,7 +77,8 @@ collections:
     slug: "{{slug}}"
     summary: "{{title_en}} ({{category}})"
     fields:
-      - { label: "文件Slug（必填，建议英文/数字/短横线，例如：hf-3600-usb-fan）", name: "slug", widget: "string" }
+      # ⚠️ 重要：不要在 frontmatter 里再写 slug 字段
+      # 文件名就是 slug（entry.slug），前端用 p.slug 即可
 
       - { label: "状态（必填）", name: "status", widget: "select", options: ["active","draft"], default: "active" }
 
@@ -90,62 +90,44 @@ collections:
         value_field: "{{slug}}"
         display_fields: ["name_en"]
 
-      - { label: "型号（选填）", name: "model", widget: "string", required: false }
+      - { label: "型号 Model（选填）", name: "model", widget: "string", required: false }
       - { label: "MOQ（选填）", name: "moq", widget: "string", required: false }
-      - { label: "排序（选填，越小越靠前）", name: "order", widget: "number", value_type: "int", required: false }
+      - { label: "排序 order（选填，越小越靠前）", name: "order", widget: "number", value_type: "int", required: false }
 
-      - label: "产品图（选填，可多张）"
+      # ✅ images: string[]（每项是图片路径字符串）
+      - label: "产品图 images（选填，可多张）"
         name: "images"
         widget: "list"
         required: false
         field: { label: "图片", name: "image", widget: "image" }
+        # ↑ 这里 field 最终保存的是字符串（/uploads/xxx.jpg），不会生成对象数组
 
-      - { label: "标题-英文（必填）", name: "title_en", widget: "string" }
-      - { label: "标题-西班牙语（选填）", name: "title_es", widget: "string", required: false }
-      - { label: "标题-法语（选填）", name: "title_fr", widget: "string", required: false }
-      - { label: "标题-德语（选填）", name: "title_de", widget: "string", required: false }
-      - { label: "标题-意大利语（选填）", name: "title_it", widget: "string", required: false }
+      # 标题（扁平字段）
+      - { label: "标题-英文 title_en（必填）", name: "title_en", widget: "string" }
+      - { label: "标题-西班牙语 title_es（选填）", name: "title_es", widget: "string", required: false }
+      - { label: "标题-法语 title_fr（选填）", name: "title_fr", widget: "string", required: false }
+      - { label: "标题-德语 title_de（选填）", name: "title_de", widget: "string", required: false }
+      - { label: "标题-意大利语 title_it（选填）", name: "title_it", widget: "string", required: false }
 
-      - label: "卖点-英文（选填，每条一行）"
-        name: "features_en"
-        widget: "list"
-        required: false
-        field: { label: "卖点", name: "feature", widget: "string" }
+      # 卖点（扁平字段，数组）
+      - { label: "卖点-英文 features_en（选填，每条一行）", name: "features_en", widget: "list", required: false }
+      - { label: "卖点-西班牙语 features_es（选填）", name: "features_es", widget: "list", required: false }
+      - { label: "卖点-法语 features_fr（选填）", name: "features_fr", widget: "list", required: false }
+      - { label: "卖点-德语 features_de（选填）", name: "features_de", widget: "list", required: false }
+      - { label: "卖点-意大利语 features_it（选填）", name: "features_it", widget: "list", required: false }
 
-      - label: "卖点-西班牙语（选填）"
-        name: "features_es"
-        widget: "list"
-        required: false
-        field: { label: "卖点", name: "feature", widget: "string" }
+      # 详情正文（扁平字段，markdown）
+      - { label: "详情-英文 body_en（选填）", name: "body_en", widget: "markdown", required: false }
+      - { label: "详情-西班牙语 body_es（选填）", name: "body_es", widget: "markdown", required: false }
+      - { label: "详情-法语 body_fr（选填）", name: "body_fr", widget: "markdown", required: false }
+      - { label: "详情-德语 body_de（选填）", name: "body_de", widget: "markdown", required: false }
+      - { label: "详情-意大利语 body_it（选填）", name: "body_it", widget: "markdown", required: false }
 
-      - label: "卖点-法语（选填）"
-        name: "features_fr"
-        widget: "list"
-        required: false
-        field: { label: "卖点", name: "feature", widget: "string" }
+      # 视频
+      - { label: "视频类型 video_provider（必填）", name: "video_provider", widget: "select", options: ["none","cloudflare_stream","youtube"], default: "none" }
+      - { label: "视频值 video_value（选填：YouTube链接/ID 或 Cloudflare Stream Embed URL/ID）", name: "video_value", widget: "string", required: false }
 
-      - label: "卖点-德语（选填）"
-        name: "features_de"
-        widget: "list"
-        required: false
-        field: { label: "卖点", name: "feature", widget: "string" }
-
-      - label: "卖点-意大利语（选填）"
-        name: "features_it"
-        widget: "list"
-        required: false
-        field: { label: "卖点", name: "feature", widget: "string" }
-
-      - { label: "详情-英文（选填）", name: "body_en", widget: "markdown", required: false }
-      - { label: "详情-西班牙语（选填）", name: "body_es", widget: "markdown", required: false }
-      - { label: "详情-法语（选填）", name: "body_fr", widget: "markdown", required: false }
-      - { label: "详情-德语（选填）", name: "body_de", widget: "markdown", required: false }
-      - { label: "详情-意大利语（选填）", name: "body_it", widget: "markdown", required: false }
-
-      - { label: "视频类型（必填）", name: "video_provider", widget: "select", options: ["none","cloudflare_stream","youtube"], default: "none" }
-      - { label: "视频值（选填：YouTube链接/ID 或 Cloudflare Stream ID）", name: "video_value", widget: "string", required: false }
-
-  # 4) 博客
+  # 4) 博客（保持不变）
   - name: "blog"
     label: "博客"
     folder: "src/content/blog"
@@ -171,7 +153,7 @@ collections:
       - { label: "视频类型", name: "video_provider", widget: "select", options: ["none","cloudflare_stream","youtube"], default: "none" }
       - { label: "视频值(可选)", name: "video_value", widget: "string", required: false }
 
-  # 5) 页面内容（让后台控制前端页面）
+  # 5) 页面内容（保持不变）
   - name: "pages"
     label: "页面内容"
     folder: "src/content/pages"
