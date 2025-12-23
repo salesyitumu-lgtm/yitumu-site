@@ -19,13 +19,9 @@ export async function getStaticPaths() {
   const productsAll = await getCollection('products');
   const active = productsAll.filter(p => p.data.status === 'active');
 
-  const catsAll = await getCollection('categories');
-  const enabledSlugs = new Set(catsAll.filter(c=>c.data.enabled).map(c=>c.slug));
-
   const paths: any[] = [];
   for (const lang of langs) {
     for (const p of active) {
-      if (!enabledSlugs.has(p.data.category)) continue;
       paths.push({ params: { lang, slug: p.slug } });
     }
   }
@@ -57,22 +53,24 @@ const productsAll = await getCollection('products');
 const p = productsAll.find(x => x.slug === slug);
 if (!p) return new Response('Not Found', { status: 404 });
 
-const cat = catsAll.find(c => c.slug === p.data.category);
-if (!cat || !cat.data.enabled) return new Response('Not Found', { status: 404 });
-
 const title = (p.data as any)[`title_${lang}`] ?? p.data.title_en ?? p.slug;
 const features = ((p.data as any)[`features_${lang}`] ?? p.data.features_en ?? []) as string[];
 const body = ((p.data as any)[`body_${lang}`] ?? p.data.body_en ?? '') as string;
-const images = normalizeImages(p.data.images);
+
+const images = normalizeImages((p.data as any).images);
+const cover = images[0] ?? null;
 
 let embedUrl: string | null = null;
-if (p.data.video_provider === 'youtube') {
-  embedUrl = youtubeEmbed(p.data.video_value);
-} else if (p.data.video_provider === 'cloudflare_stream') {
-  embedUrl = p.data.video_value ?? null;
+if ((p.data as any).video_provider === 'youtube') {
+  embedUrl = youtubeEmbed((p.data as any).video_value);
+} else if ((p.data as any).video_provider === 'cloudflare_stream') {
+  embedUrl = (p.data as any).video_value ?? null;
 }
 
 const whatsappDigits = settings?.whatsapp_number ? String(settings.whatsapp_number).replace(/[^0-9]/g,'') : '';
+const catSlug = (p.data as any).category ?? '';
+const cat = catsAll.find(c => c.slug === catSlug);
+const catLabel = cat ? ((cat.data as any)[`name_${lang}`] ?? cat.data.name_en) : catSlug;
 ---
 
 <Base title={title} lang={lang} nav={nav} settings={settings} ui={ui}>
@@ -80,26 +78,51 @@ const whatsappDigits = settings?.whatsapp_number ? String(settings.whatsapp_numb
     <div class="grid">
       <div class="card">
         <h1>{title}</h1>
-        <p class="muted">
-          Category:
-          <a href={`/${lang}/${p.data.category}/`}>
-            {(cat.data as any)[`name_${lang}`] ?? cat.data.name_en}
-          </a>
-          {p.data.model ? <span> · Model: {p.data.model}</span> : null}
-          {p.data.moq ? <span> · MOQ: {p.data.moq}</span> : null}
+
+        <p class="muted pmeta">
+          {catSlug ? (
+            <>
+              Category:
+              <a href={`/${lang}/${catSlug}/`}>{catLabel}</a>
+            </>
+          ) : null}
+          {(p.data as any).model ? <span> · Model: {(p.data as any).model}</span> : null}
+          {(p.data as any).moq ? <span> · MOQ: {(p.data as any).moq}</span> : null}
         </p>
 
         {images.length ? (
-          <div class="list">
-            {images.map((img) => (
+          <>
+            {/* 主图：1:1 正方形，点击打开原图 */}
+            <a class="heroimg" href={cover ?? images[0]} target="_blank" rel="noopener">
               <img
-                src={img}
-                alt={title}
-                style="max-width:100%;border-radius:14px;border:1px solid var(--border);display:block;"
-                loading="lazy"
+                src={cover ?? images[0]}
+                alt={`${title} - main image`}
+                width="1000"
+                height="1000"
+                loading="eager"
+                decoding="async"
+                fetchpriority="high"
               />
-            ))}
-          </div>
+            </a>
+
+            {/* 多图：缩略图墙 */}
+            {images.length > 1 ? (
+              <div class="thumbs" role="list">
+                {images.slice(1).map((img, idx) => (
+                  <a class="thumb" href={img} target="_blank" rel="noopener" role="listitem" aria-label={`${title} image ${idx + 2}`}>
+                    <img
+                      src={img}
+                      alt={`${title} - image ${idx + 2}`}
+                      width="600"
+                      height="600"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </a>
+                ))}
+              </div>
+            ) : null}
+          </>
         ) : (
           <p class="note">No images yet. Add in /admin → 产品管理 → 产品图.</p>
         )}
@@ -117,8 +140,17 @@ const whatsappDigits = settings?.whatsapp_number ? String(settings.whatsapp_numb
         <div class="hr"></div>
         <div class="row">
           <a class="btn" href={`/${lang}/contact/?product=${encodeURIComponent(title)}`}>Request a Quote</a>
-          {whatsappDigits ? <a class="btn" href={`https://wa.me/${whatsappDigits}`} target="_blank">{settings?.whatsapp_label ?? 'WhatsApp'}</a> : null}
-          <a class="btn" href={`mailto:${settings?.sales_email ?? 'sales@yitumuglobal.com'}?subject=${encodeURIComponent('Inquiry: '+title)}`}>Email</a>
+          {whatsappDigits ? (
+            <a class="btn" href={`https://wa.me/${whatsappDigits}`} target="_blank">
+              {settings?.whatsapp_label ?? 'WhatsApp'}
+            </a>
+          ) : null}
+          <a
+            class="btn"
+            href={`mailto:${settings?.sales_email ?? 'sales@yitumuglobal.com'}?subject=${encodeURIComponent('Inquiry: '+title)}`}
+          >
+            Email
+          </a>
         </div>
       </div>
 
@@ -135,11 +167,69 @@ const whatsappDigits = settings?.whatsapp_number ? String(settings.whatsapp_numb
         <div class="hr"></div>
         <h2>Description</h2>
         {body ? (
-          <div class="muted" set:html={body}></div>
+          <div class="prose muted" set:html={body}></div>
         ) : (
           <p class="note">No description yet. Add “body_en / body_{lang}” in CMS.</p>
         )}
       </div>
     </div>
   </section>
+
+  <style>
+    .pmeta{ margin-top:6px; }
+
+    /* 主图：固定 1:1，保证你看到的就是“1000x1000视觉” */
+    .heroimg{
+      display:block;
+      margin-top:12px;
+      border-radius:14px;
+      overflow:hidden;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.03);
+    }
+    .heroimg img{
+      width:100%;
+      aspect-ratio: 1 / 1;
+      height:auto;
+      object-fit:cover; /* 想“完整显示不裁切”，改成 contain */
+      display:block;
+    }
+
+    /* 缩略图墙 */
+    .thumbs{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap:10px;
+      margin-top:10px;
+    }
+    .thumb{
+      display:block;
+      border-radius:12px;
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.02);
+    }
+    .thumb img{
+      width:100%;
+      aspect-ratio: 1 / 1;
+      height:auto;
+      object-fit:cover;
+      display:block;
+    }
+
+    /* 详情排版 */
+    .prose :global(p){ margin: 10px 0; }
+    .prose :global(ul){ margin: 10px 0; padding-left: 18px; }
+    .prose :global(li){ margin: 6px 0; }
+    .prose :global(h1), .prose :global(h2), .prose :global(h3){
+      margin: 14px 0 8px;
+      line-height: 1.25;
+    }
+    .prose :global(img){
+      max-width:100%;
+      height:auto;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+    }
+  </style>
 </Base>
