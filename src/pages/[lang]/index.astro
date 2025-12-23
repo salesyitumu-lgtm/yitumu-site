@@ -28,31 +28,113 @@ const nav = catsAll
     label: (c.data as any)[`name_${lang}`] ?? c.data.name_en,
     href: `/${lang}/${c.slug}/`
   }));
+
+function pickCover(images: any): string | null {
+  if (!Array.isArray(images) || images.length === 0) return null;
+  const first = images[0];
+  if (typeof first === 'string') return first;              // 扁平版：["/uploads/xx.jpg"]
+  if (first && typeof first === 'object') {
+    return first.image ?? first.url ?? first.src ?? null;    // 兼容旧版：[{image:"/uploads/xx.jpg"}]
+  }
+  return null;
+}
+
+const productsAll = await getCollection('products');
+const products = productsAll
+  .filter(p => p.data.status === 'active')
+  .sort((a,b)=> (a.data.order ?? 999) - (b.data.order ?? 999))
+  .map(p => {
+    const title =
+      (p.data as any)[`title_${lang}`] ??
+      (p.data as any).title_en ??
+      p.slug;
+
+    const cover = pickCover((p.data as any).images);
+
+    const model = (p.data as any).model ?? '';
+    const moq = (p.data as any).moq ?? '';
+    const category = (p.data as any).category ?? '';
+
+    return {
+      slug: p.slug,
+      title,
+      cover,
+      model,
+      moq,
+      category,
+      href: `/${lang}/p/${p.slug}/`,
+      quoteHref: `/${lang}/contact/?product=${encodeURIComponent(title)}`,
+    };
+  });
 ---
 
 <Base title="YITUMU GLOBAL" lang={lang} nav={nav} settings={settings} ui={ui}>
   <section class="hero">
     <div class="grid">
+      <div class="card head">
+        <div>
+          <h1>Wholesale Products &amp; OEM/ODM Support</h1>
+          <p class="muted">
+            Car chargers, USB fans, car accessories and home &amp; kitchen items. Fast response, stable supply, and quality control.
+          </p>
+        </div>
+
+        <div class="head-actions">
+          <a class="btn" href={`/${lang}/contact/`}>Request a Quote</a>
+        </div>
+      </div>
+
       <div class="card">
-        <h1>Wholesale Products &amp; OEM/ODM Support</h1>
-        <p class="muted">
-          Car chargers, USB fans, car accessories and home &amp; kitchen items. Fast response, stable supply, and quality control.
-        </p>
-        <p><a class="btn" href={`/${lang}/contact/`}>Request a Quote</a></p>
+        <div class="topbar">
+          <h2 style="margin:0;">All Products</h2>
+          <p class="note" style="margin:0;">Total: {products.length}</p>
+        </div>
 
-        <div class="hr"></div>
+        {products.length ? (
+          <div class="products-grid">
+            {products.map(p => (
+              <article class="pcard">
+                <a class="pimg" href={p.href} aria-label={p.title}>
+                  {p.cover ? (
+                    <img
+                      src={p.cover}
+                      alt={p.title}
+                      loading="lazy"
+                      decoding="async"
+                      width="1000"
+                      height="1000"
+                    />
+                  ) : (
+                    <div class="pholder">No image</div>
+                  )}
+                </a>
 
-        <h2>Categories</h2>
-        <p class="muted">
-          {nav.map((c, i) => (
-            <>
-              <a href={c.href}>{c.label}</a>{i < nav.length - 1 ? ' · ' : ''}
-            </>
-          ))}
-        </p>
+                <div class="pbody">
+                  <h3 class="ptitle">
+                    <a href={p.href}>{p.title}</a>
+                  </h3>
 
-        <div class="hr"></div>
+                  {(p.model || p.moq) ? (
+                    <p class="pmeta">
+                      {p.model ? <span><b>Model:</b> {p.model}</span> : null}
+                      {p.moq ? <span><b>MOQ:</b> {p.moq}</span> : null}
+                    </p>
+                  ) : null}
 
+                  <div class="pactions">
+                    <a class="btn" href={p.href}>View Details</a>
+                    <a class="btn ghost" href={p.quoteHref}>Request a Quote</a>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p>No active products yet. Add products in <a href="/admin/">/admin</a> → 产品管理.</p>
+        )}
+      </div>
+
+      <div class="card">
         <h2>How to update products &amp; blog</h2>
         <p class="muted">
           Go to <a href="/admin/">/admin</a> → login → edit Categories / Products / Blog / Site Settings.
@@ -60,4 +142,90 @@ const nav = catsAll
       </div>
     </div>
   </section>
+
+  <style>
+    .head{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap:14px;
+    }
+    .head-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap:12px;
+      margin-bottom:12px;
+    }
+
+    .products-grid{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 14px;
+    }
+
+    .pcard{
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:14px;
+      overflow:hidden;
+      background: rgba(255,255,255,.02);
+    }
+
+    .pimg{
+      display:block;
+      background: rgba(255,255,255,.03);
+      border-bottom:1px solid rgba(255,255,255,.08);
+    }
+
+    /* ✅ 首页封面固定1:1正方形（1000x1000展示也不会拉伸） */
+    .pimg img{
+      width:100%;
+      aspect-ratio: 1 / 1;
+      height:auto;
+      object-fit:cover;
+      display:block;
+    }
+
+    .pholder{
+      aspect-ratio: 1 / 1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      opacity:.75;
+    }
+
+    .pbody{ padding:12px 12px 14px; }
+
+    .ptitle{
+      margin:0 0 8px;
+      font-size:16px;
+      line-height:1.35;
+    }
+
+    .ptitle a{ text-decoration:none; }
+    .ptitle a:hover{ text-decoration:underline; }
+
+    .pmeta{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin:0 0 10px;
+      font-size:12px;
+      opacity:.85;
+    }
+
+    .pactions{
+      display:flex;
+      gap:10px;
+      margin-top:12px;
+      flex-wrap:wrap;
+    }
+
+    .btn.ghost{
+      background: transparent;
+      border: 1px solid rgba(255,255,255,.18);
+    }
+  </style>
 </Base>
