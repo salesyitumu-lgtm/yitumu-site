@@ -19,40 +19,40 @@ collections:
         label: "全局设置"
         file: "src/content/settings/global.md"
         fields:
-          - { label: "网站名称", name: "site_name", widget: "string", required: false }
-          - { label: "默认语言", name: "default_locale", widget: "select", options: ["en","es","fr","de","it"], default: "en" }
-          - { label: "销售邮箱", name: "sales_email", widget: "string", required: true }
-          - { label: "WhatsApp号码", name: "whatsapp_number", widget: "string", required: false }
-          - { label: "WhatsApp按钮文案", name: "whatsapp_label", widget: "string", required: false }
-          - { label: "表单外部提交地址(可选)", name: "form_action", widget: "string", required: false }
+          # ===== 基础信息 =====
+          - { label: "网站名称（选填）", name: "site_name", widget: "string", required: false }
+          - { label: "默认语言（必填）", name: "default_locale", widget: "select", options: ["en","es","fr","de","it"], default: "en" }
+          - { label: "销售邮箱（必填）", name: "sales_email", widget: "string", required: true }
+          - { label: "WhatsApp号码（选填）", name: "whatsapp_number", widget: "string", required: false }
+          - { label: "WhatsApp按钮文案（选填）", name: "whatsapp_label", widget: "string", required: false }
+          - { label: "表单外部提交地址（选填）", name: "form_action", widget: "string", required: false }
 
-          - label: "导航文案（可选，不填则用默认英文）"
-            name: "nav_labels"
-            widget: "object"
-            fields:
-              - { label: "Blog (EN)", name: "nav_blog_en", widget: "string", required: false }
-              - { label: "Blog (ES)", name: "nav_blog_es", widget: "string", required: false }
-              - { label: "Blog (FR)", name: "nav_blog_fr", widget: "string", required: false }
-              - { label: "Blog (DE)", name: "nav_blog_de", widget: "string", required: false }
-              - { label: "Blog (IT)", name: "nav_blog_it", widget: "string", required: false }
+          # ===== 导航文案（全部选填：不填则用默认英文）=====
+          - { label: "Blog 菜单（EN）（选填）", name: "nav_blog_en", widget: "string", required: false }
+          - { label: "Blog 菜单（ES）（选填）", name: "nav_blog_es", widget: "string", required: false }
+          - { label: "Blog 菜单（FR）（选填）", name: "nav_blog_fr", widget: "string", required: false }
+          - { label: "Blog 菜单（DE）（选填）", name: "nav_blog_de", widget: "string", required: false }
+          - { label: "Blog 菜单（IT）（选填）", name: "nav_blog_it", widget: "string", required: false }
 
-              - { label: "About (EN)", name: "nav_about_en", widget: "string", required: false }
-              - { label: "About (ES)", name: "nav_about_es", widget: "string", required: false }
-              - { label: "About (FR)", name: "nav_about_fr", widget: "string", required: false }
-              - { label: "About (DE)", name: "nav_about_de", widget: "string", required: false }
-              - { label: "About (IT)", name: "nav_about_it", widget: "string", required: false }
+          - { label: "About 菜单（EN）（选填）", name: "nav_about_en", widget: "string", required: false }
+          - { label: "About 菜单（ES）（选填）", name: "nav_about_es", widget: "string", required: false }
+          - { label: "About 菜单（FR）（选填）", name: "nav_about_fr", widget: "string", required: false }
+          - { label: "About 菜单（DE）（选填）", name: "nav_about_de", widget: "string", required: false }
+          - { label: "About 菜单（IT）（选填）", name: "nav_about_it", widget: "string", required: false }
 
-              - { label: "Contact (EN)", name: "nav_contact_en", widget: "string", required: false }
-              - { label: "Contact (ES)", name: "nav_contact_es", widget: "string", required: false }
-              - { label: "Contact (FR)", name: "nav_contact_fr", widget: "string", required: false }
-              - { label: "Contact (DE)", name: "nav_contact_de", widget: "string", required: false }
-              - { label: "Contact (IT)", name: "nav_contact_it", widget: "string", required: false }
+          - { label: "Contact 菜单（EN）（选填）", name: "nav_contact_en", widget: "string", required: false }
+          - { label: "Contact 菜单（ES）（选填）", name: "nav_contact_es", widget: "string", required: false }
+          - { label: "Contact 菜单（FR）（选填）", name: "nav_contact_fr", widget: "string", required: false }
+          - { label: "Contact 菜单（DE）（选填）", name: "nav_contact_de", widget: "string", required: false }
+          - { label: "Contact 菜单（IT）（选填）", name: "nav_contact_it", widget: "string", required: false }
 
-              - { label: "Language 标签(EN)", name: "lang_label_en", widget: "string", required: false }
-              - { label: "Language 标签(ES)", name: "lang_label_es", widget: "string", required: false }
-              - { label: "Language 标签(FR)", name: "lang_label_fr", widget: "string", required: false }
-              - { label: "Language 标签(DE)", name: "lang_label_de", widget: "string", required: false }
-              - { label: "Language 标签(IT)", name: "lang_label_it", widget: "string", required: false }
+          # ===== 语言选择器文案（选填）=====
+          - { label: "语言标签（EN）（选填）", name: "lang_label_en", widget: "string", required: false }
+          - { label: "语言标签（ES）（选填）", name: "lang_label_es", widget: "string", required: false }
+          - { label: "语言标签（FR）（选填）", name: "lang_label_fr", widget: "string", required: false }
+          - { label: "语言标签（DE）（选填）", name: "lang_label_de", widget: "string", required: false }
+          - { label: "语言标签（IT）（选填）", name: "lang_label_it", widget: "string", required: false }
+
 
   # 2) 类目（4个类目：名称多语言 + 开关 + 排序）
   - name: "categories"
