@@ -4,7 +4,8 @@ category: car-accessories
 model: huu
 moq: ui
 images:
-  - /uploads/北欧美风.png
+  - /uploads/001-800_副本.jpg
+  - /uploads/001-800.webp
 title_en: hjkj
 video_provider: none
 ---
