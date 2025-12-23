@@ -1,7 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import { getCollection } from 'astro:content';
-import { assertLocale, pickByLocale } from '../_util';
+import { assertLocale, pickByLocale } from './_util';
 
 function normalizeImages(images: any): string[] {
   if (!Array.isArray(images)) return [];
