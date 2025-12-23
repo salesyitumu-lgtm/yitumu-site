@@ -7,7 +7,7 @@ export async function getStaticPaths() {
   const langs = ['en','es','fr','de','it'];
   const catsAll = await getCollection('categories');
   const enabled = catsAll.filter(c => c.data.enabled);
-  const paths = [] as any[];
+  const paths: any[] = [];
   for (const lang of langs) {
     for (const c of enabled) {
       paths.push({ params: { lang, category: c.slug } });
@@ -40,6 +40,16 @@ const nav = catsAll
     href: `/${lang}/${c.slug}/`
   }));
 
+function pickCover(images: any): string | null {
+  if (!Array.isArray(images) || images.length === 0) return null;
+  const first = images[0];
+  if (typeof first === 'string') return first;                 // 扁平版：["/uploads/xx.jpg"]
+  if (first && typeof first === 'object') {
+    return first.image ?? first.url ?? first.src ?? null;       // 兼容旧版：[{image:"/uploads/xx.jpg"}]
+  }
+  return null;
+}
+
 const productsAll = await getCollection('products');
 
 const products = productsAll
@@ -47,8 +57,8 @@ const products = productsAll
   .sort((a,b)=> (a.data.order ?? 999) - (b.data.order ?? 999))
   .map(p => {
     const title = (p.data as any)[`title_${lang}`] ?? p.data.title_en ?? p.slug;
-    const images = Array.isArray((p.data as any).images) ? (p.data as any).images : [];
-    const cover = images?.[0] ?? null;
+
+    const cover = pickCover((p.data as any).images);
 
     const model = (p.data as any).model ?? '';
     const moq = (p.data as any).moq ?? '';
@@ -62,7 +72,6 @@ const products = productsAll
       slug: p.slug,
       title,
       cover,
-      images,
       model,
       moq,
       features: Array.isArray(feats) ? feats : [],
@@ -89,9 +98,16 @@ const catName = (cat.data as any)[`name_${lang}`] ?? cat.data.name_en;
           <div class="products-grid">
             {products.map(p => (
               <article class="pcard">
-                <a class="pimg" href={p.href}>
+                <a class="pimg" href={p.href} aria-label={p.title}>
                   {p.cover ? (
-                    <img src={p.cover} alt={p.title} loading="lazy" />
+                    <img
+                      src={p.cover}
+                      alt={p.title}
+                      loading="lazy"
+                      decoding="async"
+                      width="1000"
+                      height="1000"
+                    />
                   ) : (
                     <div class="pholder">No image</div>
                   )}
@@ -155,15 +171,17 @@ const catName = (cat.data as any)[`name_${lang}`] ?? cat.data.name_en;
       border-bottom:1px solid rgba(255,255,255,.08);
     }
 
+    /* ✅ 统一正方形封面（和你想要的1000x1000一致） */
     .pimg img{
       width:100%;
-      height:220px;
-      object-fit:cover;
+      aspect-ratio: 1 / 1;
+      height:auto;
+      object-fit:cover; /* 想“完整显示不裁切”就改成 contain */
       display:block;
     }
 
     .pholder{
-      height:220px;
+      aspect-ratio: 1 / 1;
       display:flex;
       align-items:center;
       justify-content:center;
@@ -196,16 +214,15 @@ const catName = (cat.data as any)[`name_${lang}`] ?? cat.data.name_en;
       font-size:13px;
       opacity:.92;
     }
-
     .pfeat li{ margin: 3px 0; }
 
     .pactions{
       display:flex;
       gap:10px;
       margin-top:12px;
+      flex-wrap:wrap;
     }
 
-    /* 兼容你原有 btn 样式，ghost 只做轻边框 */
     .btn.ghost{
       background: transparent;
       border: 1px solid rgba(255,255,255,.18);
