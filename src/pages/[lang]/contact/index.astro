@@ -18,9 +18,9 @@ const nav = catsAll
   .filter(c => c.data.enabled)
   .sort((a,b)=> (a.data.order ?? 999) - (b.data.order ?? 999))
   .map(c => ({
-    slug: c.data.slug,
+    slug: c.slug, // ✅ 这里改
     label: (c.data as any)[`name_${lang}`] ?? c.data.name_en,
-    href: `/${lang}/${c.data.slug}/`
+    href: `/${lang}/${c.slug}/` // ✅ 这里改
   }));
 
 const product = Astro.url.searchParams.get('product') ?? '';
