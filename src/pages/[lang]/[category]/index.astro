@@ -41,15 +41,35 @@ const nav = catsAll
   }));
 
 const productsAll = await getCollection('products');
+
 const products = productsAll
   .filter(p => p.data.status === 'active' && p.data.category === category)
   .sort((a,b)=> (a.data.order ?? 999) - (b.data.order ?? 999))
-  .map(p => ({
-    slug: p.slug,
-    title: (p.data as any)[`title_${lang}`] ?? p.data.title_en,
-    cover: (p.data.images && p.data.images.length) ? p.data.images[0] : null,
-    href: `/${lang}/p/${p.slug}/`
-  }));
+  .map(p => {
+    const title = (p.data as any)[`title_${lang}`] ?? p.data.title_en ?? p.slug;
+    const images = Array.isArray((p.data as any).images) ? (p.data as any).images : [];
+    const cover = images?.[0] ?? null;
+
+    const model = (p.data as any).model ?? '';
+    const moq = (p.data as any).moq ?? '';
+
+    const feats =
+      (p.data as any)[`features_${lang}`] ??
+      (p.data as any).features_en ??
+      [];
+
+    return {
+      slug: p.slug,
+      title,
+      cover,
+      images,
+      model,
+      moq,
+      features: Array.isArray(feats) ? feats : [],
+      href: `/${lang}/p/${p.slug}/`,
+      quoteHref: `/${lang}/contact/?product=${encodeURIComponent(title)}`,
+    };
+  });
 
 const catName = (cat.data as any)[`name_${lang}`] ?? cat.data.name_en;
 ---
@@ -57,28 +77,138 @@ const catName = (cat.data as any)[`name_${lang}`] ?? cat.data.name_en;
 <Base title={catName} lang={lang} nav={nav} settings={settings} ui={ui}>
   <section class="hero">
     <div class="grid">
-      <div class="card">
-        <h1>{catName}</h1>
-        <p class="note">Products: {products.length}</p>
+      <div class="card head">
+        <div>
+          <h1>{catName}</h1>
+          <p class="note">Products: {products.length}</p>
+        </div>
       </div>
 
       <div class="card">
         {products.length ? (
-          <div class="cols">
+          <div class="products-grid">
             {products.map(p => (
-              <a class="btn col" href={p.href} style="flex-direction:column;align-items:stretch;">
-                {p.cover ? <img src={p.cover} alt={p.title} style="width:100%;border-radius:14px;border:1px solid var(--border);margin-bottom:10px" /> : null}
-                <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;">
-                  <span>{p.title}</span>
-                  <span class="badge">View</span>
+              <article class="pcard">
+                <a class="pimg" href={p.href}>
+                  {p.cover ? (
+                    <img src={p.cover} alt={p.title} loading="lazy" />
+                  ) : (
+                    <div class="pholder">No image</div>
+                  )}
+                </a>
+
+                <div class="pbody">
+                  <h3 class="ptitle">
+                    <a href={p.href}>{p.title}</a>
+                  </h3>
+
+                  {(p.model || p.moq) ? (
+                    <p class="pmeta">
+                      {p.model ? <span><b>Model:</b> {p.model}</span> : null}
+                      {p.moq ? <span><b>MOQ:</b> {p.moq}</span> : null}
+                    </p>
+                  ) : null}
+
+                  {p.features?.length ? (
+                    <ul class="pfeat">
+                      {p.features.slice(0, 4).map(t => <li>{t}</li>)}
+                    </ul>
+                  ) : (
+                    <p class="note">No features yet. Add “卖点 Features” in /admin → 产品管理.</p>
+                  )}
+
+                  <div class="pactions">
+                    <a class="btn" href={p.href}>View Details</a>
+                    <a class="btn ghost" href={p.quoteHref}>Request a Quote</a>
+                  </div>
                 </div>
-              </a>
+              </article>
             ))}
           </div>
         ) : (
-          <p>No active products in this category yet. Add products in /admin → 产品.</p>
+          <p>No active products in this category yet. Add products in /admin → 产品管理.</p>
         )}
       </div>
     </div>
   </section>
+
+  <style>
+    .head{ display:flex; justify-content:space-between; align-items:flex-end; gap:14px; }
+
+    .products-grid{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+      margin-top: 6px;
+    }
+
+    .pcard{
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:14px;
+      overflow:hidden;
+      background: rgba(255,255,255,.02);
+    }
+
+    .pimg{
+      display:block;
+      background: rgba(255,255,255,.03);
+      border-bottom:1px solid rgba(255,255,255,.08);
+    }
+
+    .pimg img{
+      width:100%;
+      height:220px;
+      object-fit:cover;
+      display:block;
+    }
+
+    .pholder{
+      height:220px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      opacity:.75;
+    }
+
+    .pbody{ padding:12px 12px 14px; }
+
+    .ptitle{
+      margin:0 0 8px;
+      font-size:16px;
+      line-height:1.35;
+    }
+
+    .ptitle a{ text-decoration:none; }
+    .ptitle a:hover{ text-decoration:underline; }
+
+    .pmeta{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin:0 0 10px;
+      font-size:12px;
+      opacity:.85;
+    }
+
+    .pfeat{
+      margin:0;
+      padding-left:16px;
+      font-size:13px;
+      opacity:.92;
+    }
+
+    .pfeat li{ margin: 3px 0; }
+
+    .pactions{
+      display:flex;
+      gap:10px;
+      margin-top:12px;
+    }
+
+    /* 兼容你原有 btn 样式，ghost 只做轻边框 */
+    .btn.ghost{
+      background: transparent;
+      border: 1px solid rgba(255,255,255,.18);
+    }
+  </style>
 </Base>
