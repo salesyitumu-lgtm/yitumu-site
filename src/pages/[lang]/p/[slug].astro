@@ -2,7 +2,7 @@
 import Base from '../../../layouts/Base.astro';
 import { getCollection } from 'astro:content';
 import { assertLocale, pickByLocale, youtubeEmbed } from '../_util';
-import { marked } from 'marked';
+import { Markdown } from 'astro/components';
 
 export async function getStaticPaths() {
   const langs = ['en','es','fr','de','it'];
@@ -11,13 +11,13 @@ export async function getStaticPaths() {
   const active = productsAll.filter(p => p.data.status === 'active');
 
   const catsAll = await getCollection('categories');
-  // ✅ 正确：slug 在 c.slug，不在 c.data.slug
+  // ✅ categories 的 slug 在 c.slug
   const enabledSlugs = new Set(catsAll.filter(c => c.data.enabled).map(c => c.slug));
 
   const paths = [];
   for (const lang of langs) {
     for (const p of active) {
-      // 如果分类被禁用，不生成该产品详情页（直接 404）
+      // 分类被禁用 => 不生成该详情页（访问会 404）
       if (!enabledSlugs.has(p.data.category)) continue;
       paths.push({ params: { lang, slug: p.slug } });
     }
@@ -29,6 +29,7 @@ const { lang, slug } = Astro.params;
 if (!lang || !assertLocale(lang)) throw new Error('Invalid lang');
 
 const settings = (await getCollection('settings'))[0]?.data;
+
 const ui = {
   blog: pickByLocale(settings ?? {}, lang, 'nav_blog') ?? 'Blog',
   about: pickByLocale(settings ?? {}, lang, 'nav_about') ?? 'About',
@@ -56,12 +57,9 @@ if (!p) return new Response('Not Found', { status: 404 });
 const cat = catsAll.find(c => c.slug === p.data.category);
 if (!cat || !cat.data.enabled) return new Response('Not Found', { status: 404 });
 
-const title = (p.data as any)[`title_${lang}`] ?? p.data.title_en;
+const title = (p.data as any)[`title_${lang}`] ?? p.data.title_en ?? p.slug;
 const features = ((p.data as any)[`features_${lang}`] ?? p.data.features_en ?? []) as string[];
 const bodyMd = ((p.data as any)[`body_${lang}`] ?? p.data.body_en ?? '') as string;
-
-// ✅ 把 Markdown 渲染成 HTML，避免“正文缺失/不完整”
-const bodyHtml = bodyMd ? marked.parse(bodyMd) : '';
 
 let embedUrl: string | null = null;
 if (p.data.video_provider === 'youtube') {
@@ -73,36 +71,36 @@ if (p.data.video_provider === 'youtube') {
 const whatsappDigits = settings?.whatsapp_number
   ? String(settings.whatsapp_number).replace(/[^0-9]/g,'')
   : '';
+
+const categoryLabel = (cat.data as any)[`name_${lang}`] ?? cat.data.name_en;
 ---
 
 <Base title={title} lang={lang} nav={nav} settings={settings} ui={ui}>
   <section class="hero">
     <div class="grid">
+      <!-- 左侧：标题 + 图片 + 视频 + CTA -->
       <div class="card">
         <h1>{title}</h1>
 
         <p class="muted">
           Category:
-          <a href={`/${lang}/${p.data.category}/`}>
-            {(cat.data as any)[`name_${lang}`] ?? cat.data.name_en}
-          </a>
+          <a href={`/${lang}/${p.data.category}/`}>{categoryLabel}</a>
           {p.data.model ? <span> · Model: {p.data.model}</span> : null}
           {p.data.moq ? <span> · MOQ: {p.data.moq}</span> : null}
         </p>
 
         {p.data.images?.length ? (
-          <div class="list" style="display:grid;gap:12px;">
+          <div class="imggrid">
             {p.data.images.map((img) => (
               <img
                 src={img}
                 alt={title}
-                style="width:100%;max-width:100%;border-radius:14px;border:1px solid var(--border)"
                 loading="lazy"
               />
             ))}
           </div>
         ) : (
-          <p>No images yet. Add in /admin → Products → Images.</p>
+          <p class="note">No images yet. Add in /admin → 产品管理 → images.</p>
         )}
 
         {embedUrl ? (
@@ -121,19 +119,25 @@ const whatsappDigits = settings?.whatsapp_number
         ) : null}
 
         <div class="hr"></div>
-        <div class="row">
+        <div class="actions">
           <a class="btn" href={`/${lang}/contact/?product=${encodeURIComponent(title)}`}>Request a Quote</a>
+
           {whatsappDigits ? (
-            <a class="btn" href={`https://wa.me/${whatsappDigits}`} target="_blank">
+            <a class="btn ghost" href={`https://wa.me/${whatsappDigits}`} target="_blank">
               {settings?.whatsapp_label ?? 'WhatsApp'}
             </a>
           ) : null}
-          <a class="btn" href={`mailto:${settings?.sales_email ?? 'sales@yitumuglobal.com'}?subject=${encodeURIComponent('Inquiry: '+title)}`}>
+
+          <a
+            class="btn ghost"
+            href={`mailto:${settings?.sales_email ?? 'sales@yitumuglobal.com'}?subject=${encodeURIComponent('Inquiry: '+title)}`}
+          >
             Email
           </a>
         </div>
       </div>
 
+      <!-- 右侧：卖点 + 描述 -->
       <div class="card">
         <h2>Key Features</h2>
         {features.length ? (
@@ -141,17 +145,54 @@ const whatsappDigits = settings?.whatsapp_number
             {features.map(f => <li>{f}</li>)}
           </ul>
         ) : (
-          <p>Add features in CMS for this language.</p>
+          <p class="note">Add features_{lang} (or features_en) in CMS.</p>
         )}
 
         <div class="hr"></div>
         <h2>Description</h2>
-        {bodyHtml ? (
-          <div class="muted prose" set:html={bodyHtml}></div>
+
+        {bodyMd ? (
+          <div class="prose muted">
+            <Markdown content={bodyMd} />
+          </div>
         ) : (
-          <p>Add body_{lang} in CMS.</p>
+          <p class="note">Add body_{lang} (or body_en) in CMS.</p>
         )}
       </div>
     </div>
   </section>
+
+  <style>
+    .imggrid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .imggrid img{
+      width:100%;
+      max-width:100%;
+      border-radius:14px;
+      border:1px solid var(--border);
+      display:block;
+      object-fit:cover;
+    }
+
+    .actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top: 8px;
+    }
+    .btn.ghost{
+      background: transparent;
+      border: 1px solid rgba(255,255,255,.18);
+    }
+
+    /* 让 Markdown 输出更像“产品说明” */
+    .prose :global(p){ margin: 10px 0; }
+    .prose :global(ul){ margin: 10px 0; padding-left: 18px; }
+    .prose :global(li){ margin: 4px 0; }
+    .prose :global(a){ text-decoration: underline; }
+  </style>
 </Base>
