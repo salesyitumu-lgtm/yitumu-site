@@ -1,169 +1,77 @@
 /**
  * Cloudflare Pages Function: /api/callback
- * Exchanges GitHub OAuth `code` for an access token and returns an HTML page
- * that posts the token back to the opener window in the exact format Decap expects.
+ * 简化版：直接发送 Token，不等待握手，解决白屏卡顿问题
  */
-
-function html(body, status = 200, headers = {}) {
-  return new Response(body, {
-    status,
-    headers: {
-      'content-type': 'text/html; charset=utf-8',
-      'cache-control': 'no-store',
-      ...headers,
-    },
-  });
-}
-
-async function exchangeCode({ code, clientId, clientSecret, redirectUri }) {
-  const res = await fetch('https://github.com/login/oauth/access_token', {
-    method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      'User-Agent': 'decap-cms-cloudflare-pages-function',
-    },
-    body: JSON.stringify({
-      client_id: clientId,
-      client_secret: clientSecret,
-      code,
-      redirect_uri: redirectUri,
-    }),
-  });
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`GitHub token exchange failed: ${res.status} ${text}`);
-  }
-
-  const data = await res.json();
-  if (data.error) {
-    throw new Error(`GitHub token exchange error: ${data.error_description || data.error}`);
-  }
-  return data.access_token;
-}
-
-function renderPostMessagePage({ status, content, origin }) {
-  // Decap expects the popup to send:
-  // 1) "authorizing:github"
-  // 2) "authorization:github:<status>:<json>"
-  // ...via postMessage after a handshake.
-  // Embed the payload as a JS string literal safely.
-  const payload = JSON.stringify(content);
-
-  return `<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Authorization</title>
-  </head>
-  <body>
-    <script>
-      (function () {
-        var targetOrigin = ${JSON.stringify(origin)};
-        var content = ${JSON.stringify(payload)};
-
-        function receiveMessage(message) {
-          try {
-            window.opener.postMessage(
-              'authorization:github:${status}:' + JSON.stringify(JSON.parse(content)),
-              targetOrigin
-            );
-          } catch (e) {
-            // If parsing fails, still notify with raw content
-            window.opener.postMessage(
-              'authorization:github:${status}:' + content,
-              targetOrigin
-            );
-          }
-          window.removeEventListener('message', receiveMessage, false);
-          window.close();
-        }
-
-        window.addEventListener('message', receiveMessage, false);
-        window.opener.postMessage('authorizing:github', targetOrigin);
-      })();
-    </script>
-  </body>
-</html>`;
-}
 
 export async function onRequestGet(context) {
   const { request, env } = context;
   const url = new URL(request.url);
-
-  const clientId = env.GITHUB_CLIENT_ID;
-  const clientSecret = env.GITHUB_CLIENT_SECRET;
-
   const code = url.searchParams.get('code');
-  const state = url.searchParams.get('state');
+  const origin = url.origin; // 获取网站域名 (https://www.yitumuglobal.com)
 
-  const origin = url.origin; // same site as CMS
-
-  // Validate state with cookie
-  const cookieHeader = request.headers.get('cookie') || '';
-  const cookieMatch = cookieHeader.match(/(?:^|;\s*)decap_oauth_state=([^;]+)/);
-  const cookieState = cookieMatch ? cookieMatch[1] : null;
-
-  if (!clientId || !clientSecret) {
-    const page = renderPostMessagePage({
-      status: 'error',
-      content: {
-        error: 'Missing env vars',
-        details:
-          'Cloudflare Pages -> Settings -> Environment variables: set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET, then redeploy.',
-      },
-      origin,
-    });
-    return html(page, 500);
-  }
-
+  // 1. 如果没有 Code，报错
   if (!code) {
-    const page = renderPostMessagePage({
-      status: 'error',
-      content: { error: 'Missing OAuth code' },
-      origin,
-    });
-    return html(page, 400);
+    return new Response('Error: Missing code', { status: 400 });
   }
 
-  if (!state || !cookieState || state !== cookieState) {
-    const page = renderPostMessagePage({
-      status: 'error',
-      content: {
-        error: 'Invalid state',
-        details: 'State mismatch. Please retry login; do not block cookies for this site.',
-      },
-      origin,
-    });
-    return html(page, 400, {
-      'set-cookie': 'decap_oauth_state=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax',
-    });
-  }
-
+  // 2. 向 GitHub 换取 Token
   try {
-    const redirectUri = new URL('/api/callback', origin).toString();
-    const token = await exchangeCode({ code, clientId, clientSecret, redirectUri });
-
-    const page = renderPostMessagePage({
-      status: 'success',
-      content: { token, provider: 'github' },
-      origin,
+    const response = await fetch('https://github.com/login/oauth/access_token', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'accept': 'application/json',
+        'user-agent': 'yitumu-cms-auth',
+      },
+      body: JSON.stringify({
+        client_id: env.GITHUB_CLIENT_ID,
+        client_secret: env.GITHUB_CLIENT_SECRET,
+        code: code,
+      }),
     });
 
-    // Clear state cookie
-    return html(page, 200, {
-      'set-cookie': 'decap_oauth_state=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax',
+    const result = await response.json();
+
+    if (result.error) {
+      return new Response(`GitHub Error: ${result.error}`, { status: 500 });
+    }
+
+    const token = result.access_token;
+    const provider = 'github';
+
+    // 3. 生成 HTML：直接把 Token 发送给主窗口，然后自我关闭
+    // 注意：这里去掉了复杂的 receiveMessage 监听，改为直接发送 (Fire and Forget)
+    const html = `
+      <!doctype html>
+      <html>
+      <body>
+        <script>
+          (function() {
+            var origin = "${origin}";
+            var data = { token: "${token}", provider: "${provider}" };
+            try {
+              // 格式必须是 authorization:provider:status:json_string
+              window.opener.postMessage(
+                "authorization:github:success:" + JSON.stringify(data),
+                origin
+              );
+            } catch (err) {
+              console.error(err);
+            }
+            // 发送完立刻关闭窗口
+            window.close();
+          })();
+        </script>
+        <p>Signing in... do not close this window.</p>
+      </body>
+      </html>
+    `;
+
+    return new Response(html, {
+      headers: { 'content-type': 'text/html; charset=utf-8' },
     });
+
   } catch (err) {
-    const page = renderPostMessagePage({
-      status: 'error',
-      content: { error: 'OAuth exchange failed', details: String(err && err.message ? err.message : err) },
-      origin,
-    });
-    return html(page, 500, {
-      'set-cookie': 'decap_oauth_state=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax',
-    });
+    return new Response(`Server Error: ${err.message}`, { status: 500 });
   }
 }
