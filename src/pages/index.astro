@@ -1,11 +1,12 @@
 ---
-// 全新 YITUMU 纯净版首页模板
+// 1. 自动引入我们刚刚建立的 JSON 数据
+import products from '../data/products.json';
 ---
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
-    <title>YITUMU Official | Premium Showcase</title>
+    <title>YITUMU Official | Premium Product Showcase</title>
   </head>
   <body class="bg-gray-50 text-gray-900 font-sans">
     
@@ -15,23 +16,51 @@
         <div class="text-xl font-bold tracking-wider text-gray-900">YITUMU</div>
         <nav class="flex space-x-8">
           <a href="#" class="text-black font-semibold">Home</a>
-          <a href="#" class="text-gray-500 hover:text-black transition">Products</a>
-          <a href="#" class="text-gray-500 hover:text-black transition">About</a>
+          <a href="#products" class="text-gray-500 hover:text-black transition">Products</a>
         </nav>
       </div>
     </header>
 
-    <!-- 欢迎主视图 -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 text-center">
-      <div class="inline-flex items-center space-x-2 bg-black text-white text-xs px-3 py-1 rounded-full mb-6 font-medium tracking-wide">
-        <span>🚀 NEW ARCHITECTURE READY</span>
-      </div>
-      <h1 class="text-4xl sm:text-6xl font-black text-gray-950 tracking-tight mb-6">
-        YITUMU Official Brand Showcase
+    <!-- 头部 Banner -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
+      <h1 class="text-4xl sm:text-5xl font-black text-gray-950 tracking-tight mb-4">
+        YITUMU Official Showcase
       </h1>
-      <p class="text-lg text-gray-500 max-w-2xl mx-auto mb-8 leading-relaxed">
-        Our full lines of products are transitioning to this high-performance data structure.
+      <p class="text-md text-gray-500 max-w-xl mx-auto mb-12">
+        Explore our latest innovations in smart automotive accessories and portable smart devices.
       </p>
+
+      <!-- 产品网格区域 -->
+      <section id="products" class="grid grid-cols-1 md:grid-cols-2 gap-8 text-left max-w-4xl mx-auto">
+        {products.map((product) => (
+          <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+            <div>
+              <div class="text-xs font-bold uppercase tracking-wider text-blue-600 mb-2">{product.category}</div>
+              <h2 class="text-xl font-bold text-gray-950 mb-2">{product.title}</h2>
+              <p class="text-sm text-gray-500 mb-4">{product.description}</p>
+              
+              <ul class="space-y-1 mb-6">
+                {product.features.map((feat) => (
+                  <li class="text-xs text-gray-600 flex items-center">
+                    <span class="mr-2 text-green-500">✓</span> {feat}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div class="border-t border-gray-50 pt-4 flex items-center justify-between">
+              <span class="text-xs font-mono text-gray-400">Model: {product.model}</span>
+              <div class="flex space-x-2">
+                {product.platforms.shein && (
+                  <a href={product.platforms.shein} target="_blank" class="text-xs bg-black text-white px-3 py-1.5 rounded-lg font-medium hover:bg-gray-800 transition">
+                    Buy on SHEIN
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </section>
     </main>
 
   </body>
