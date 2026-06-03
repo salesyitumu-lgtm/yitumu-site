@@ -1,0 +1,35 @@
+[
+  {
+    "id": "69w-retractable-car-charger",
+    "title": "YITUMU 69W Retractable Car Charger Fast Charging Adapter",
+    "category": "Automotive",
+    "model": "YTM-CC69",
+    "description": "Premium 69W high-speed power dual retractable cables car charger for modern drivers.",
+    "features": [
+      "69W High-Speed Output",
+      "Dual Retractable Cables (80cm)",
+      "Smart Safe Charging Protection"
+    ],
+    "image": "https://img.imagesia.com/placeholder.jpg",
+    "platforms": {
+      "shein": "https://www.shein.co.uk",
+      "temu": "https://www.temu.com"
+    }
+  },
+  {
+    "id": "s005-portable-handheld-fan",
+    "title": "YITUMU Portable Handheld Turbo Fan 100-Speed",
+    "category": "Cooling",
+    "model": "YTM-S005",
+    "description": "100-speed adjustable digital display ice-cool blast turbo handheld fan.",
+    "features": [
+      "100-Speed Adjustable Airflow",
+      "Digital Power & Speed Display",
+      "Type-C Fast Rechargeable"
+    ],
+    "image": "https://img.imagesia.com/placeholder.jpg",
+    "platforms": {
+      "shein": "https://www.shein.co.uk"
+    }
+  }
+]
