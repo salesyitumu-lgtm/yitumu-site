@@ -35,14 +35,14 @@ import products from '../data/products.json';
           <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between">
             <div>
               <!-- 产品图片超清展示区 -->
-              <div class="bg-gray-100 aspect-video w-full overflow-hidden flex items-center justify-center">
-                <img 
-                  src={product.image} 
-                  alt={product.title} 
-                  class="w-full h-full object-cover hover:scale-105 transition duration-500"
-                  loading="lazy"
-                />
-              </div>
+<div class="bg-white aspect-square w-full overflow-hidden flex items-center justify-center border-b border-gray-50">
+  <img 
+    src={product.image} 
+    alt={product.title} 
+    class="w-full h-full object-cover hover:scale-105 transition duration-500"
+    loading="lazy"
+  />
+</div>
               
               <!-- 文字详情区 -->
               <div class="p-6 pb-0">
