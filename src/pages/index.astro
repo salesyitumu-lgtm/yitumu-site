@@ -34,20 +34,25 @@ import products from '../data/products.json';
         {products.map((product) => (
           <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between">
             <div>
-              <!-- 产品图片超清展示区 -->
-<div class="bg-white aspect-square w-full overflow-hidden flex items-center justify-center border-b border-gray-50">
-  <img 
-    src={product.image} 
-    alt={product.title} 
-    class="w-full h-full object-cover hover:scale-105 transition duration-500"
-    loading="lazy"
-  />
-</div>
+              <!-- 产品图片超清展示区 (1:1 正方形比例) -->
+              <div class="bg-white aspect-square w-full overflow-hidden flex items-center justify-center border-b border-gray-50">
+                <img 
+                  src={product.image} 
+                  alt={product.title} 
+                  class="w-full h-full object-cover hover:scale-105 transition duration-500"
+                  loading="lazy"
+                />
+              </div>
               
               <!-- 文字详情区 -->
               <div class="p-6 pb-0">
                 <div class="text-xs font-bold uppercase tracking-wider text-blue-600 mb-2">{product.category}</div>
-                <h2 class="text-xl font-bold text-gray-950 mb-2">{product.title}</h2>
+                
+                <!-- 🌟 已经为你改好的超链接标题 🌟 -->
+                <h2 class="text-xl font-bold text-gray-950 mb-2 hover:text-blue-600 transition">
+                  <a href={`/products/${product.id}`}>{product.title}</a>
+                </h2>
+                
                 <p class="text-sm text-gray-500 mb-4 leading-relaxed">{product.description}</p>
                 
                 <ul class="space-y-1.5 mb-6">
@@ -80,3 +85,4 @@ import products from '../data/products.json';
 
   </body>
 </html>
+`
