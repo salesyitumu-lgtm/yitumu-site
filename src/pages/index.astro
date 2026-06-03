@@ -1,5 +1,4 @@
 ---
-// 1. 自动引入我们刚刚建立的 JSON 数据
 import products from '../data/products.json';
 ---
 <html lang="en">
@@ -22,7 +21,7 @@ import products from '../data/products.json';
     </header>
 
     <!-- 头部 Banner -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
       <h1 class="text-4xl sm:text-5xl font-black text-gray-950 tracking-tight mb-4">
         YITUMU Official Showcase
       </h1>
@@ -33,29 +32,45 @@ import products from '../data/products.json';
       <!-- 产品网格区域 -->
       <section id="products" class="grid grid-cols-1 md:grid-cols-2 gap-8 text-left max-w-4xl mx-auto">
         {products.map((product) => (
-          <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+          <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between">
             <div>
-              <div class="text-xs font-bold uppercase tracking-wider text-blue-600 mb-2">{product.category}</div>
-              <h2 class="text-xl font-bold text-gray-950 mb-2">{product.title}</h2>
-              <p class="text-sm text-gray-500 mb-4">{product.description}</p>
+              <!-- 产品图片超清展示区 -->
+              <div class="bg-gray-100 aspect-video w-full overflow-hidden flex items-center justify-center">
+                <img 
+                  src={product.image} 
+                  alt={product.title} 
+                  class="w-full h-full object-cover hover:scale-105 transition duration-500"
+                  loading="lazy"
+                />
+              </div>
               
-              <ul class="space-y-1 mb-6">
-                {product.features.map((feat) => (
-                  <li class="text-xs text-gray-600 flex items-center">
-                    <span class="mr-2 text-green-500">✓</span> {feat}
-                  </li>
-                ))}
-              </ul>
+              <!-- 文字详情区 -->
+              <div class="p-6 pb-0">
+                <div class="text-xs font-bold uppercase tracking-wider text-blue-600 mb-2">{product.category}</div>
+                <h2 class="text-xl font-bold text-gray-950 mb-2">{product.title}</h2>
+                <p class="text-sm text-gray-500 mb-4 leading-relaxed">{product.description}</p>
+                
+                <ul class="space-y-1.5 mb-6">
+                  {product.features.map((feat) => (
+                    <li class="text-xs text-gray-600 flex items-center">
+                      <span class="mr-2 text-green-500 font-bold">✓</span> {feat}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
 
-            <div class="border-t border-gray-50 pt-4 flex items-center justify-between">
-              <span class="text-xs font-mono text-gray-400">Model: {product.model}</span>
-              <div class="flex space-x-2">
-                {product.platforms.shein && (
-                  <a href={product.platforms.shein} target="_blank" class="text-xs bg-black text-white px-3 py-1.5 rounded-lg font-medium hover:bg-gray-800 transition">
-                    Buy on SHEIN
-                  </a>
-                )}
+            <!-- 卡片底部动作条 -->
+            <div class="p-6 pt-0">
+              <div class="border-t border-gray-50 pt-4 flex items-center justify-between">
+                <span class="text-xs font-mono text-gray-400">Model: {product.model}</span>
+                <div class="flex space-x-2">
+                  {product.platforms.shein && (
+                    <a href={product.platforms.shein} target="_blank" class="text-xs bg-black text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-850 transition">
+                      Buy on SHEIN
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
           </div>
