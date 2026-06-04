@@ -1,11 +1,14 @@
 ---
-import products from '../../data/products.json';
+import { getProducts } from '../../data/fetch-products.js';
+
 export async function getStaticPaths() {
+  const products = await getProducts();
   return products.map((product) => ({
     params: { id: product.id },
     props: { product },
   }));
 }
+
 const { product } = Astro.props;
 ---
 <html lang="en">

@@ -1,5 +1,6 @@
 ---
-import products from '../data/products.json';
+import { getProducts } from '../data/fetch-products.js';
+const products = await getProducts();
 ---
 <html lang="en">
   <head>
@@ -49,7 +50,7 @@ import products from '../data/products.json';
                 <h2 class="text-xs sm:text-sm font-bold text-gray-950 mb-1.5 leading-snug line-clamp-2 hover:text-blue-600 transition">
                   <a href={`/products/${product.id}`}>{product.title}</a>
                 </h2>
-                <!-- 新增 MSRP 显示 -->
+                <!-- 自动读取表格中的 MSRP -->
                 <p class="text-[11px] font-bold text-gray-900 mb-2">MSRP: ${product.msrp}</p>
                 
                 <p class="text-[11px] text-gray-400 leading-normal line-clamp-2 mb-3">
