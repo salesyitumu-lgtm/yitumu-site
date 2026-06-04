@@ -1,73 +1,75 @@
 ---
 import products from '../data/products.json';
 ---
-<!-- 导航栏 -->
-<header class="bg-white border-b border-gray-100 sticky top-0 z-50">
-  <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-    <div class="text-xl font-bold tracking-wider text-gray-900">YITUMU</div>
-    <nav class="flex space-x-6 text-sm">
-      <a href="#" class="text-black font-semibold">Home</a>
-      <a href="#products" class="text-gray-500 hover:text-black transition">Products</a>
-      <a href="/contact" class="text-gray-500 hover:text-black transition">Contact</a>
-    </nav>
-  </div>
-</header>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>YITUMU Official</title>
+  </head>
+  <body class="bg-gray-50 text-gray-900 font-sans antialiased">
+    <!-- 导航栏 -->
+    <header class="bg-white border-b border-gray-100 sticky top-0 z-50">
+      <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div class="text-xl font-bold tracking-wider text-gray-900">YITUMU</div>
+        <nav class="flex space-x-6 text-sm">
+          <a href="#" class="text-black font-semibold">Home</a>
+          <a href="#products" class="text-gray-500 hover:text-black transition">Products</a>
+          <a href="/contact" class="text-gray-500 hover:text-black transition">Contact</a>
+        </nav>
+      </div>
+    </header>
 
-<!-- 品牌主视觉区 -->
-<main class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-fade-in">
-  <div class="text-center max-w-2xl mx-auto mb-16">
-    <h1 class="text-4xl sm:text-5xl font-black text-gray-950 tracking-tight mb-4">
-      YITUMU Official Showcase
-    </h1>
-    <p class="text-sm sm:text-base text-gray-400 leading-relaxed">
-      Explore our premium innovations in smart automotive accessories, portable cooling, and smart home lighting. Built for global standards.
-    </p>
-  </div>
+    <!-- 主视觉区 -->
+    <main class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-fade-in">
+      <div class="text-center max-w-2xl mx-auto mb-16">
+        <h1 class="text-4xl sm:text-5xl font-black text-gray-950 tracking-tight mb-4">YITUMU Official Showcase</h1>
+        <p class="text-sm sm:text-base text-gray-400 leading-relaxed">
+          Explore our premium innovations in smart automotive accessories, portable cooling, and smart home lighting.
+        </p>
+      </div>
 
-  <!-- 6列自适应产品网格 -->
-  <section id="products" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 lg:gap-5">
-    {products.map((product) => (
-        <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between h-full group">
-          <div class="flex flex-col">
-            <div class="bg-white aspect-square w-full overflow-hidden flex items-center justify-center border-b border-gray-50 relative">
-              <img 
-                src={product.image} 
-                alt={product.title} 
-                class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                loading="lazy"
-                onerror="this.src='https://placehold.co/400x400/f3f4f6/9ca3af?text=YITUMU'"
-              />
+      <!-- 6列自适应产品网格 -->
+      <section id="products" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 lg:gap-5">
+        {products.map((product) => (
+          <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between h-full group">
+            <div class="flex flex-col">
+              <div class="aspect-square w-full overflow-hidden flex items-center justify-center border-b border-gray-50">
+                <img 
+                  src={product.image} 
+                  alt={product.title} 
+                  class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                  loading="lazy"
+                />
+              </div>
+              <div class="p-3 sm:p-4">
+                <span class="inline-block text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded mb-2">
+                  {product.category}
+                </span>
+                <h2 class="text-xs sm:text-sm font-bold text-gray-950 mb-1.5 leading-snug line-clamp-2 hover:text-blue-600 transition">
+                  <a href={`/products/${product.id}`}>{product.title}</a>
+                </h2>
+                <!-- 新增 MSRP 显示 -->
+                <p class="text-[11px] font-bold text-gray-900 mb-2">MSRP: ${product.msrp}</p>
+                
+                <p class="text-[11px] text-gray-400 leading-normal line-clamp-2 mb-3">
+                  {product.description}
+                </p>
+              </div>
             </div>
-            <div class="p-3 sm:p-4">
-              <span class="inline-block text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded mb-2">
-                {product.category}
-              </span>
-              <h2 class="text-xs sm:text-sm font-bold text-gray-950 mb-1.5 leading-snug line-clamp-2 min-h-[2.5rem] hover:text-blue-600 transition">
-                <a href={`/products/${product.id}`}>{product.title}</a>
-              </h2>
-              <p class="text-[11px] text-gray-400 leading-normal line-clamp-2 min-h-[2rem] mb-3">
-                {product.description}
-              </p>
-              <ul class="space-y-1">
-                {product.features.map((feat) => (
-                  <li class="text-[11px] text-gray-500 flex items-center truncate">
-                    <span class="mr-1 text-green-500 font-bold">✓</span> {feat}
-                  </li>
-                ))}
-              </ul>
+            <div class="p-3 sm:p-4 pt-0">
+              <div class="border-t border-gray-50 pt-3 flex flex-col gap-2">
+                <span class="text-[10px] font-mono text-gray-400 truncate">Model: {product.model}</span>
+                {product.platforms.shein && (
+                  <a href={product.platforms.shein} target="_blank" class="w-full block text-center text-[11px] bg-black text-white py-2 rounded-xl font-medium hover:bg-gray-800 transition shadow-sm">
+                    Buy on SHEIN
+                  </a>
+                )}
+              </div>
             </div>
           </div>
-          <div class="p-3 sm:p-4 pt-0">
-            <div class="border-t border-gray-50 pt-3 flex flex-col gap-2">
-              <span class="text-[10px] font-mono text-gray-400 truncate">Model: {product.model}</span>
-              {product.platforms.shein && (
-                <a href={product.platforms.shein} target="_blank" class="w-full block text-center text-[11px] bg-black text-white py-2 rounded-xl font-medium hover:bg-gray-800 transition duration-200 shadow-sm">
-                  Buy on SHEIN
-                </a>
-              )}
-            </div>
-          </div>
-        </div>
-    ))}
-  </section>
-</main>
+        ))}
+      </section>
+    </main>
+  </body>
+</html>
