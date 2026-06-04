@@ -9,10 +9,30 @@ export async function getStaticPaths() {
 const { product } = Astro.props;
 ---
 <html lang="en">
-  <head><meta charset="utf-8" /><title>{product.title}</title></head>
-  <body>
-    <h1>{product.title}</h1>
-    <p>MSRP: ${product.msrp}</p>
-    <img src={product.image} alt={product.title} />
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{product.title} | YITUMU</title>
+  </head>
+  <body class="bg-gray-50 min-h-screen py-12 px-4">
+    <main class="max-w-3xl mx-auto bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+      <a href="/" class="text-sm text-gray-500 hover:text-black mb-8 block">&larr; Back to Home</a>
+      
+      <div class="grid md:grid-cols-2 gap-8">
+        <img src={product.image} alt={product.title} class="w-full rounded-2xl" />
+        
+        <div>
+          <h1 class="text-2xl font-black mb-4">{product.title}</h1>
+          <p class="text-xl font-bold text-blue-600 mb-6">MSRP: ${product.msrp}</p>
+          <p class="text-gray-600 mb-6">{product.description}</p>
+          
+          <div class="space-y-2">
+            {product.features.map((feat) => (
+              <p class="text-sm text-gray-500">✓ {feat}</p>
+            ))}
+          </div>
+        </div>
+      </div>
+    </main>
   </body>
 </html>
